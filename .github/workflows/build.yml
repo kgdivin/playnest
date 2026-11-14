@@ -25,7 +25,7 @@ jobs:
       - name: Dépendances
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libsdl2-dev libgl1-mesa-dev libfontconfig1 libfuse2 file \
+          sudo apt-get install -y ninja-build libsdl2-dev libgl1-mesa-dev libfontconfig1 libfuse2 file xvfb \
             libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
             libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1
 
@@ -55,10 +55,15 @@ jobs:
           mv Playnest*.AppImage Playnest-linux-x86_64.AppImage
           ls -la Playnest-linux-x86_64.AppImage
 
+      - name: Essai de lancement
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" python3 tools/ci_smoke.py ./Playnest-linux-x86_64.AppImage smoke-linux.png
+
       - uses: actions/upload-artifact@v4
         with:
           name: Playnest-linux
-          path: Playnest-linux-x86_64.AppImage
+          path: |
+            Playnest-linux-x86_64.AppImage
+            smoke-linux.png
 
   windows:
     runs-on: windows-latest
@@ -93,10 +98,16 @@ jobs:
           Compress-Archive -Path dist/Playnest -DestinationPath Playnest-windows-x64.zip
           Get-ChildItem dist/Playnest | Select-Object Name, Length
 
+      - name: Essai de lancement
+        shell: pwsh
+        run: python tools/ci_smoke.py dist/Playnest/Playnest.exe smoke-windows.png
+
       - uses: actions/upload-artifact@v4
         with:
           name: Playnest-windows
-          path: Playnest-windows-x64.zip
+          path: |
+            Playnest-windows-x64.zip
+            smoke-windows.png
 
   # Version macOS : compilée ici, jamais lancée sur un vrai Mac avant publication (bêta).
   macos:
@@ -130,10 +141,15 @@ jobs:
           hdiutil create -volname Playnest -srcfolder dmg -ov -format UDZO Playnest-macos.dmg
           ls -la Playnest-macos.dmg
 
+      - name: Essai de lancement
+        run: python3 tools/ci_smoke.py build/Playnest.app/Contents/MacOS/Playnest smoke-macos.png
+
       - uses: actions/upload-artifact@v4
         with:
           name: Playnest-macos
-          path: Playnest-macos.dmg
+          path: |
+            Playnest-macos.dmg
+            smoke-macos.png
 
   # Sur main : publie la version si elle est nouvelle.
   # Sur une branche ci/… : dépose les fichiers dans une pré-version « ci-build », pour pouvoir les essayer avant.
@@ -168,4 +184,4 @@ jobs:
             echo "La version $VERSION est déjà publiée : rien à faire."
             exit 0
           fi
-          gh release create "v$VERSION" dist/* --title "Playnest $VERSION" --notes-file RELEASE_NOTES.md --target "$GITHUB_SHA"
+          gh release create "v$VERSION" dist/Playnest-* --title "Playnest $VERSION" --notes-file RELEASE_NOTES.md --target "$GITHUB_SHA"
