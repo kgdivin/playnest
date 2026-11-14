@@ -1,59 +1,159 @@
 name: Build
 
+# Compile Playnest pour Linux, Windows et macOS à chaque envoi.
+# Sur la branche main, si la version inscrite dans CMakeLists.txt n'a pas encore été publiée,
+# les trois fichiers sont publiés dans une nouvelle « release » : Playnest la propose alors comme mise à jour.
+
 on:
   push:
-    branches: [main]
+    branches: [main, "ci/**"]
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: "6.8.3"
+
 jobs:
-  # Compile Playnest et lance les tests de détection sur des fichiers d'exemple.
   linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
       - name: Dépendances
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-private-dev libsdl2-dev ninja-build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libsdl2-dev libgl1-mesa-dev libfontconfig1 libfuse2 file \
+            libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1
+
+      - name: Installer Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+
       - name: Compiler et tester
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DPLAYNEST_BUILD_TESTS=ON
           cmake --build build
           python3 tests/make_samples.py /tmp/samples
-          QT_QPA_PLATFORM=offscreen ./build/playnest_detect_test /tmp/samples
+          QT_QPA_PLATFORM=offscreen ./build/playnest_detect_test /tmp/samples > /tmp/detect.log || (tail -40 /tmp/detect.log; exit 1)
 
-  # Zip Windows, à la demande (onglet Actions > Build > Run workflow).
+      - name: AppImage
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$(which qmake)"
+          export LINUXDEPLOY_OUTPUT_VERSION="$(sed -n 's/^project(Playnest VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir -e build/Playnest \
+            -d resources/linux/playnest.desktop -i resources/linux/playnest.png --plugin qt --output appimage
+          mv Playnest*.AppImage Playnest-linux-x86_64.AppImage
+          ls -la Playnest-linux-x86_64.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Playnest-linux
+          path: Playnest-linux-x86_64.AppImage
+
   windows:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Qt et MinGW
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_mingw
+          tools: tools_mingw1310
+          cache: true
+
+      - name: Compiler
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:IQTA_TOOLS\mingw1310_64\bin;$env:PATH"
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 4
+
+      - name: Empaqueter
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:IQTA_TOOLS\mingw1310_64\bin;$env:PATH"
+          New-Item -ItemType Directory -Force dist/Playnest | Out-Null
+          Copy-Item build/Playnest.exe dist/Playnest/
+          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw --compiler-runtime dist/Playnest/Playnest.exe
+          (Get-Content README.md | Select-Object -Skip 2) -replace '\(README\.en\.md\)', '(README.md)' -replace 'README\.en\.md\]', 'README.md]' | Set-Content dist/Playnest/LISEZ-MOI.md
+          (Get-Content README.en.md | Select-Object -Skip 2) -replace '\(README\.md\)', '(LISEZ-MOI.md)' -replace 'README\.md\]', 'LISEZ-MOI.md]' | Set-Content dist/Playnest/README.md
+          Copy-Item -Recurse licences dist/Playnest/licences
+          Compress-Archive -Path dist/Playnest -DestinationPath Playnest-windows-x64.zip
+          Get-ChildItem dist/Playnest | Select-Object Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Playnest-windows
+          path: Playnest-windows-x64.zip
+
+  # Version macOS : compilée ici, jamais lancée sur un vrai Mac avant publication (bêta).
+  macos:
+    runs-on: macos-14
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Installer Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: "6.8.3"
-          arch: win64_msvc2022_64
+          version: ${{ env.QT_VERSION }}
           cache: true
-
-      - name: Environnement MSVC
-        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Compiler
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_DISABLE_FIND_PACKAGE_SDL2=ON
+          cmake --build build --parallel 4
 
       - name: Empaqueter
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist/Playnest | Out-Null
-          Copy-Item build/Playnest.exe dist/Playnest/
-          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw dist/Playnest/Playnest.exe
-          Copy-Item README.md dist/Playnest/LISEZ-MOI.md
-          Copy-Item README.en.md dist/Playnest/README.md
-          Compress-Archive -Path dist/Playnest -DestinationPath Playnest-windows-x64.zip
+          macdeployqt build/Playnest.app
+          codesign --force --deep --sign - build/Playnest.app
+          codesign --verify --deep build/Playnest.app
+          lipo -archs build/Playnest.app/Contents/MacOS/Playnest
+          mkdir dmg
+          cp -R build/Playnest.app dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname Playnest -srcfolder dmg -ov -format UDZO Playnest-macos.dmg
+          ls -la Playnest-macos.dmg
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Playnest-windows-x64
-          path: Playnest-windows-x64.zip
+          name: Playnest-macos
+          path: Playnest-macos.dmg
+
+  release:
+    needs: [linux, windows, macos]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.linux.result == 'success' && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publier la version si elle est nouvelle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(sed -n 's/^project(Playnest VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          ls -la dist
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "La version $VERSION est déjà publiée : rien à faire."
+            exit 0
+          fi
+          gh release create "v$VERSION" dist/* --title "Playnest $VERSION" --notes-file RELEASE_NOTES.md --target "$GITHUB_SHA"

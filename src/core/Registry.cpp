@@ -136,15 +136,38 @@ void Registry::loadEmulators(const QByteArray& json, bool override) {
         for (auto sn = sysNames.begin(); sn != sysNames.end(); ++sn)
             e.systemNames.insert(sn.key(), sn.value().toString());
 
+        e.flatpak = o.value(QStringLiteral("flatpak")).toString();
+        if (plat == QLatin1String("linux")) {
+            // Sous Linux, un émulateur est souvent une AppImage : « mgba-qt » accepte aussi « mgba-qt.AppImage » et « mGBA.AppImage ».
+            QStringList more;
+            for (const QString& n : e.exeNames)
+                more << n + QStringLiteral(".AppImage");
+            more << QString(e.name).remove(QLatin1Char(' ')) + QStringLiteral(".AppImage");
+            e.exeNames += more;
+            e.exeNames.removeDuplicates();
+        }
+
         const QJsonObject src = o.value(QStringLiteral("source")).toObject();
         if (!src.isEmpty()) {
             e.source.type = src.value(QStringLiteral("type")).toString(QStringLiteral("github"));
             e.source.repo = src.value(QStringLiteral("repo")).toString();
             e.source.host = src.value(QStringLiteral("host")).toString();
             e.source.url = src.value(QStringLiteral("url")).toString();
-            e.source.assets = toStringList(src.value(QStringLiteral("assets")));
             e.source.versionRegex = src.value(QStringLiteral("version")).toString();
-        } else if (o.contains(QStringLiteral("github"))) { // ancien format
+            // « assets » : une liste (Windows seulement) ou un objet par plateforme { "windows": […], "linux": […], "mac": […] }.
+            const QJsonValue assets = src.value(QStringLiteral("assets"));
+            if (assets.isObject())
+                e.source.assets = toStringList(assets.toObject().value(plat));
+            else if (plat == QLatin1String("windows"))
+                e.source.assets = toStringList(assets);
+            const bool releases = e.source.type == QLatin1String("github") || e.source.type == QLatin1String("gitlab");
+            // Linux : à défaut de motif précis, on prend l'AppImage x86_64 des versions publiées.
+            if (plat == QLatin1String("linux") && e.source.assets.isEmpty() && releases && src.value(QStringLiteral("appimage")).toBool(true))
+                e.source.assets = {QStringLiteral("(?i)^(?!.*(arm|aarch|riscv)).*(x86_64|amd64|x64|linux64).*\\.appimage$"),
+                                   QStringLiteral("(?i)^(?!.*(arm|aarch|riscv)).*\\.appimage$")};
+            if (e.source.assets.isEmpty() && (releases || plat != QLatin1String("windows")))
+                e.source = {}; // rien à installer automatiquement sur cette plateforme : site officiel
+        } else if (o.contains(QStringLiteral("github")) && plat == QLatin1String("windows")) { // ancien format
             e.source.type = QStringLiteral("github");
             e.source.repo = o.value(QStringLiteral("github")).toString();
             e.source.assets = toStringList(o.value(QStringLiteral("assets")));
@@ -155,6 +178,17 @@ void Registry::loadEmulators(const QByteArray& json, bool override) {
             DataDirRule rule{d.value(QStringLiteral("path")).toString(), d.value(QStringLiteral("when")).toString()};
             if (!rule.path.isEmpty())
                 e.dataDirs.push_back(rule);
+        }
+        if (plat == QLatin1String("linux") && !e.flatpak.isEmpty()) {
+            // Version Flatpak : ses données sont dans ~/.var/app/<id>/config ou data, plutôt que ~/.config ou ~/.local/share.
+            const QVector<DataDirRule> native = e.dataDirs;
+            for (const DataDirRule& r : native) {
+                for (const auto& [from, to] : {std::pair{QStringLiteral("%HOME%/.config/"), QStringLiteral("/config/")},
+                                               std::pair{QStringLiteral("%HOME%/.local/share/"), QStringLiteral("/data/")}}) {
+                    if (r.path.startsWith(from))
+                        e.dataDirs.push_back({QStringLiteral("%HOME%/.var/app/") + e.flatpak + to + r.path.mid(from.size()), QString()});
+                }
+            }
         }
         e.saves = toStringList(o.value(QStringLiteral("saves")));
         for (const auto& fv : o.value(QStringLiteral("systemFiles")).toArray()) {

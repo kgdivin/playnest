@@ -10,6 +10,7 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QFutureWatcher>
@@ -113,6 +114,10 @@ QVector<Root> detectionRoots() {
     }
 #else
     add(QDir::homePath() + QStringLiteral("/Applications"), 3);
+#ifdef Q_OS_MACOS
+    add(QStringLiteral("/Applications"), 2);
+#endif
+    add(QDir::homePath() + QStringLiteral("/AppImages"), 2);
     add(QDir::homePath() + QStringLiteral("/.local/bin"), 1);
     add(QDir::homePath() + QStringLiteral("/Emulators"), 4);
     add(QStringLiteral("/opt"), 2);
@@ -122,7 +127,35 @@ QVector<Root> detectionRoots() {
     return roots;
 }
 
-QHash<QString, QString> scanForExecutables(const QVector<Root>& roots, const QSet<QString>& names) {
+// Fichiers dont le nom varie d'une version à l'autre (Linux : « mGBA-0.10.5-appimage-x64.appimage » ;
+// macOS : « Dolphin.app ») : reconnus par un mot du nom, et rangés sous le nom d'exécutable habituel.
+struct LooseName {
+    QString key;         // nom d'exécutable sous lequel l'émulateur est cherché ensuite
+    QStringList needles; // « mgba », « dolphin »…
+};
+
+QString looseKey(const QString& fileName, const QVector<LooseName>& loose) {
+    const QString n = fileName.toLower();
+    for (const LooseName& l : loose)
+        for (const QString& needle : l.needles) {
+            const int at = n.indexOf(needle);
+            if (at >= 0 && (at == 0 || !n[at - 1].isLetter()) && (at + needle.size() >= n.size() || !n[at + needle.size()].isLetter()))
+                return l.key;
+        }
+    return {};
+}
+
+// Programme réel d'une application macOS : Dolphin.app/Contents/MacOS/Dolphin.
+QString bundleExecutable(const QString& app) {
+    const QDir mac(app + QStringLiteral("/Contents/MacOS"));
+    const QString expected = mac.filePath(QFileInfo(app).completeBaseName());
+    if (QFileInfo(expected).isFile())
+        return expected;
+    const QFileInfoList files = mac.entryInfoList(QDir::Files | QDir::Executable, QDir::Name);
+    return files.isEmpty() ? QString() : files.first().absoluteFilePath();
+}
+
+QHash<QString, QString> scanForExecutables(const QVector<Root>& roots, const QSet<QString>& names, const QVector<LooseName>& loose) {
     static const QSet<QString> skip = {QStringLiteral("windows"), QStringLiteral("$recycle.bin"),
                                        QStringLiteral("system volume information"), QStringLiteral("winsxs"),
                                        QStringLiteral("node_modules"), QStringLiteral(".git"), QStringLiteral("appdata"),
@@ -147,13 +180,28 @@ QHash<QString, QString> scanForExecutables(const QVector<Root>& roots, const QSe
             --budget;
             const QFileInfoList entries = QDir(dir).entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
             for (const QFileInfo& fi : entries) {
-                if (fi.isDir()) {
+                if (fi.isDir() && fi.suffix().compare(QLatin1String("app"), Qt::CaseInsensitive) == 0) {
+                    // Application macOS : on ne descend pas dedans, on retient son programme.
+                    QString n = fi.fileName().toLower();
+                    if (!names.contains(n))
+                        n = looseKey(fi.completeBaseName(), loose);
+                    const QString exe = n.isEmpty() ? QString() : bundleExecutable(fi.absoluteFilePath());
+                    if (!exe.isEmpty() && !found.contains(n)) {
+                        found.insert(n, exe);
+                        foundAt.insert(n, {ri, fi.lastModified()});
+                    }
+                } else if (fi.isDir()) {
                     if (depth < root.depth && !skip.contains(fi.fileName().toLower()))
                         queue.enqueue({fi.absoluteFilePath(), depth + 1});
                 } else {
-                    const QString n = fi.fileName().toLower();
-                    if (!names.contains(n))
-                        continue;
+                    QString n = fi.fileName().toLower();
+                    if (!names.contains(n)) {
+                        if (!n.endsWith(QLatin1String(".appimage")))
+                            continue;
+                        n = looseKey(fi.completeBaseName(), loose); // AppImage téléchargée telle quelle
+                        if (n.isEmpty())
+                            continue;
+                    }
                     // Deux copies dans le même dossier racine (ex. deux builds de Lichii) : la plus récente gagne.
                     QDateTime t = fi.lastModified();
                     if (fi.birthTime().isValid() && fi.birthTime() > t)
@@ -301,9 +349,18 @@ InstallResult runInstall(InstallJob job) {
     const QString staging = Paths::stagingDir() + QLatin1Char('/') + job.id;
     Archive::removeTree(staging);
     QString err;
-    if (job.singleExe) { // exécutable seul : il prend la place de l'exécutable actuel
+    // Nom sous lequel une AppImage est installée : « mgba-qt.AppImage ».
+    QString appImageName;
+    for (const QString& n : job.exeNames)
+        if (appImageName.isEmpty() && n.endsWith(QLatin1String(".AppImage"), Qt::CaseInsensitive))
+            appImageName = n;
+    const bool appImage = job.archive.endsWith(QLatin1String(".appimage"), Qt::CaseInsensitive) && !appImageName.isEmpty();
+    if (job.singleExe || appImage) { // fichier seul : il prend la place de l'exécutable actuel
         QDir().mkpath(staging);
-        if (!QFile::copy(job.archive, staging + QLatin1Char('/') + job.exeNames.value(0))) {
+        const QString single = staging + QLatin1Char('/') + (appImage ? appImageName : job.exeNames.value(0));
+        if (QFile::copy(job.archive, single))
+            QFile::setPermissions(single, QFile::permissions(single) | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+        if (!QFileInfo::exists(single)) {
             res.message = QObject::tr("Copie impossible de %1.").arg(QFileInfo(job.archive).fileName());
             return res;
         }
@@ -312,7 +369,19 @@ InstallResult runInstall(InstallJob job) {
         res.message = QObject::tr("Extraction impossible : %1").arg(err);
         return res;
     }
-    const QString exeInStaging = findExeIn(staging, job.exeNames, 4);
+    QString exeInStaging = findExeIn(staging, job.exeNames, 4);
+    if (exeInStaging.isEmpty() && !appImageName.isEmpty()) {
+        // Archive qui contient une AppImage au nom variable (melonDS) : elle prend le nom habituel.
+        QDirIterator it(staging, {QStringLiteral("*.AppImage"), QStringLiteral("*.appimage")}, QDir::Files, QDirIterator::Subdirectories);
+        if (it.hasNext()) {
+            const QString inner = it.next();
+            const QString renamed = QFileInfo(inner).absolutePath() + QLatin1Char('/') + appImageName;
+            if (QFile::rename(inner, renamed)) {
+                QFile::setPermissions(renamed, QFile::permissions(renamed) | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+                exeInStaging = renamed;
+            }
+        }
+    }
     if (exeInStaging.isEmpty()) {
         Archive::removeTree(staging);
         res.message = QObject::tr("L'archive ne contient pas %1.").arg(job.exeNames.join(QStringLiteral(", ")));
@@ -507,6 +576,19 @@ void EmulatorManager::startDetection() {
     const QVector<Root> roots = detectionRoots();
     const QStringList names = Registry::instance().allExeNames();
     const QSet<QString> nameSet(names.begin(), names.end());
+    QVector<LooseName> loose;
+#ifndef Q_OS_WIN
+    for (const auto& e : Registry::instance().emulators()) {
+        if (e.exeNames.isEmpty())
+            continue;
+        LooseName l{e.exeNames.first().toLower(), {e.id.toLower(), QString(e.name).remove(QLatin1Char(' ')).toLower()}};
+        QString first = e.exeNames.first().toLower();
+        first.remove(QStringLiteral(".app"));
+        l.needles << first;
+        l.needles.removeDuplicates();
+        loose << l;
+    }
+#endif
     auto* w = new QFutureWatcher<QHash<QString, QString>>(this);
     connect(w, &QFutureWatcher<QHash<QString, QString>>::finished, this, [this, w] {
         const QHash<QString, QString> found = w->result();
@@ -526,6 +608,16 @@ void EmulatorManager::startDetection() {
                         break;
                 }
             }
+#ifdef Q_OS_LINUX
+            if (path.isEmpty() && !e.flatpak.isEmpty()) { // Flatpak : le lanceur exporté se lance comme un programme
+                for (const QString& dir : {QStringLiteral("/var/lib/flatpak/exports/bin"), QDir::homePath() + QStringLiteral("/.local/share/flatpak/exports/bin")}) {
+                    if (QFileInfo(dir + QLatin1Char('/') + e.flatpak).isFile()) {
+                        path = dir + QLatin1Char('/') + e.flatpak;
+                        break;
+                    }
+                }
+            }
+#endif
             if (!path.isEmpty())
                 m_detected.insert(e.id, QDir::toNativeSeparators(path));
             Settings::instance().setValue(QStringLiteral("detect/path_") + e.id, path);
@@ -536,7 +628,7 @@ void EmulatorManager::startDetection() {
         emit detectionFinished(installedCount());
         emit changed();
     });
-    w->setFuture(QtConcurrent::run(scanForExecutables, roots, nameSet));
+    w->setFuture(QtConcurrent::run(scanForExecutables, roots, nameSet, loose));
 }
 
 QString EmulatorManager::installedVersion(const QString& exe) const {
@@ -724,7 +816,12 @@ bool EmulatorManager::importSystemFile(const QString& id, int index, const QStri
     return true;
 }
 
-void EmulatorManager::setExePath(const QString& id, const QString& path) {
+void EmulatorManager::setExePath(const QString& id, const QString& chosen) {
+    QString path = chosen;
+    // macOS : on choisit « Dolphin.app », Playnest retient le programme qu'elle contient.
+    if (path.endsWith(QLatin1String(".app"), Qt::CaseInsensitive) && QFileInfo(path).isDir())
+        if (const QString inner = bundleExecutable(path); !inner.isEmpty())
+            path = inner;
     Settings::instance().setEmulatorPath(id, path);
     Settings::instance().sync();
     refreshStatus(id);
@@ -866,7 +963,7 @@ void EmulatorManager::fetchRelease(const EmulatorDef& e, std::function<void(bool
         if (pre && (!stable || (includePre && Archive::compareVersions(pre->version, stable->version) > 0)))
             pick = pre;
         if (!pick) {
-            done(false, {}, tr("aucune archive Windows compatible dans les dernières versions"));
+            done(false, {}, tr("aucun fichier compatible avec ton système dans les dernières versions"));
             return;
         }
         done(true, *pick, {});

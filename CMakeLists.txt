@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(Playnest VERSION 3.1.1 LANGUAGES CXX)
+project(Playnest VERSION 3.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,8 +52,24 @@ if(WIN32)
     list(APPEND SOURCES resources/playnest.rc)
 endif()
 
-qt_add_executable(Playnest WIN32 ${SOURCES})
+if(APPLE)
+    # Icône de l'application, copiée dans Playnest.app/Contents/Resources.
+    set(PLAYNEST_ICNS ${CMAKE_SOURCE_DIR}/resources/playnest.icns)
+    set_source_files_properties(${PLAYNEST_ICNS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    list(APPEND SOURCES ${PLAYNEST_ICNS})
+endif()
+
+qt_add_executable(Playnest WIN32 MACOSX_BUNDLE ${SOURCES})
 target_compile_definitions(Playnest PRIVATE PLAYNEST_VERSION="${PROJECT_VERSION}")
+if(APPLE)
+    set_target_properties(Playnest PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME "Playnest"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.kgdivin.playnest"
+        MACOSX_BUNDLE_ICON_FILE "playnest.icns"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_COPYRIGHT "Playnest")
+endif()
 target_link_libraries(Playnest PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Widgets Qt6::Network Qt6::Concurrent)
 if(WIN32)
     target_link_libraries(Playnest PRIVATE version)

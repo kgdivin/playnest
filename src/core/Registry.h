@@ -60,6 +60,7 @@ struct EmulatorDef {
     QVector<SystemFileDef> systemFiles;
     QStringList needs;          // outils : vcredist, 7zip
     QStringList unsupported;    // extensions que cet émulateur ne sait pas ouvrir (ex. "nup")
+    QString flatpak; // identifiant Flatpak (Linux), ex. « org.DolphinEmu.dolphin-emu »
     QHash<QString, QString> systemNames; // jeton {system} : nom de chaque console pour cet émulateur (ares : « Famicom »)
     QString versionProbe;       // texte suivi du numéro de version dans l'exécutable (ex. "Lichii build-")
 

@@ -8,6 +8,7 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -39,6 +40,8 @@ void SelfUpdate::setRepo(const QString& repo) {
 }
 
 void SelfUpdate::cleanupOldFiles() {
+    if (const QString appImage = qEnvironmentVariable("APPIMAGE"); !appImage.isEmpty())
+        QFile::remove(appImage + QStringLiteral(".old"));
     QDirIterator it(Paths::appDir(), {QStringLiteral("*.old")}, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         const QString f = it.next();
@@ -87,6 +90,7 @@ void SelfUpdate::check(bool force) {
         m_url = url;
         m_asset = asset;
         m_notes = rel.value(QStringLiteral("body")).toString().left(1500);
+        m_page = rel.value(QStringLiteral("html_url")).toString();
         emit checked(true, tag, {});
     });
 }
@@ -94,6 +98,42 @@ void SelfUpdate::check(bool force) {
 void SelfUpdate::apply() {
     if (m_busy || m_url.isEmpty())
         return;
+#ifndef Q_OS_WIN
+    // Linux : une AppImage se remplace elle-même. Dans les autres cas (macOS, version compilée à la main),
+    // on ouvre la page de la version : l'installation reste un glisser-déposer.
+    const QString appImage = qEnvironmentVariable("APPIMAGE");
+    const bool selfReplace = m_asset.endsWith(QLatin1String(".appimage"), Qt::CaseInsensitive) && !appImage.isEmpty() &&
+                             QFileInfo(appImage).isFile() && QFileInfo(QFileInfo(appImage).absolutePath()).isWritable();
+    if (!selfReplace) {
+        QDesktopServices::openUrl(QUrl(m_page.isEmpty() ? QStringLiteral("https://github.com/%1/releases/latest").arg(repo()) : m_page));
+        return;
+    }
+    m_busy = true;
+    emit progress(tr("Téléchargement de %1 %2…").arg(QString::fromLatin1(AppInfo::kName), m_version), 0, 0);
+    const QString fresh = appImage + QStringLiteral(".new");
+    QFile::remove(fresh);
+    Net::instance().download(
+        QUrl(m_url), fresh, this, [this](qint64 r, qint64 t) { emit progress(tr("Téléchargement…"), r, t); },
+        [this, fresh, appImage](bool ok, const QString& err) {
+            m_busy = false;
+            if (!ok) {
+                QFile::remove(fresh);
+                emit failed(tr("Échec du téléchargement : %1").arg(err));
+                return;
+            }
+            QFile::setPermissions(fresh, QFile::permissions(fresh) | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+            // Sous Linux, un programme en cours peut être remplacé : l'ancienne version est gardée en .old jusqu'au prochain démarrage.
+            QFile::remove(appImage + QStringLiteral(".old"));
+            if (!QFile::rename(appImage, appImage + QStringLiteral(".old")) || !QFile::rename(fresh, appImage)) {
+                QFile::rename(appImage + QStringLiteral(".old"), appImage);
+                emit failed(tr("Impossible de remplacer %1 (dossier protégé ?).").arg(appImage));
+                return;
+            }
+            QProcess::startDetached(appImage, {QStringLiteral("--restarted")}, QFileInfo(appImage).absolutePath());
+            QCoreApplication::quit();
+        });
+    return;
+#endif
     m_busy = true;
     const QString archive = Paths::downloadsDir() + QLatin1Char('/') + m_asset;
     emit progress(tr("Téléchargement de %1 %2…").arg(QString::fromLatin1(AppInfo::kName), m_version), 0, 0);

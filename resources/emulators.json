@@ -1,5 +1,5 @@
 {
-  "_comment": "Émulateurs pilotés par Playnest. Copie ce fichier dans le dossier de données (emulators.json) pour le modifier sans recompiler : une entrée avec le même id remplace celle-ci. Jetons des arguments : {rom}, {romdir}, {romname}, {emudir}, {system} (nom de la console pour cet émulateur, voir systemNames). Jetons des chemins : {emudir}, %APPDATA%, %LOCALAPPDATA%, %DOCUMENTS%, %HOME%. dataDirs : le premier dont 'when' (ou 'path') existe est utilisé. saves : chemins relatifs au dossier de données, '*' = n'importe quel dossier. source.type : github, gitlab ou page.",
+  "_comment": "Émulateurs pilotés par Playnest. Copie ce fichier dans le dossier de données (emulators.json) pour le modifier sans recompiler : une entrée avec le même id remplace celle-ci. Jetons des arguments : {rom}, {romdir}, {romname}, {emudir}, {system} (nom de la console pour cet émulateur, voir systemNames). Jetons des chemins : {emudir}, %APPDATA%, %LOCALAPPDATA%, %DOCUMENTS%, %HOME%. dataDirs : le premier dont 'when' (ou 'path') existe est utilisé. saves : chemins relatifs au dossier de données, '*' = n'importe quel dossier. source.type : github, gitlab ou page. « exe » et « dataDirs » sont donnés par plateforme (windows, linux, mac). « source.assets » est une liste (Windows) ou un objet par plateforme ; sous Linux, sans motif précis, l'AppImage x86_64 des versions publiées est prise. « flatpak » : identifiant Flatpak, pour retrouver l'émulateur et ses données sous Linux.",
   "defaults": {
     "n64": "rmg",
     "nds": "melonds",
@@ -33,6 +33,9 @@
         "linux": [
           "Mesen",
           "mesen"
+        ],
+        "mac": [
+          "Mesen.app"
         ]
       },
       "args": [
@@ -88,6 +91,9 @@
         "linux": [
           "snes9x-gtk",
           "snes9x"
+        ],
+        "mac": [
+          "Snes9x.app"
         ]
       },
       "args": [
@@ -116,12 +122,18 @@
           {
             "path": "%HOME%/.config/snes9x"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Snes9x"
+          }
         ]
       },
       "saves": [
         "Saves"
       ],
-      "notes": "Super Nintendo : léger, compatible avec presque tous les jeux, démarre en une seconde. Aucun BIOS nécessaire."
+      "notes": "Super Nintendo : léger, compatible avec presque tous les jeux, démarre en une seconde. Aucun BIOS nécessaire.",
+      "flatpak": "com.snes9x.Snes9x"
     },
     {
       "id": "mgba",
@@ -138,6 +150,9 @@
         "linux": [
           "mgba-qt",
           "mgba"
+        ],
+        "mac": [
+          "mGBA.app"
         ]
       },
       "args": [
@@ -173,9 +188,15 @@
           {
             "path": "%HOME%/.config/mgba"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/mGBA"
+          }
         ]
       },
-      "notes": "Game Boy Advance, Game Boy Color et Game Boy : rapide et fidèle, idéal pour les hacks .gba. Fonctionne sans BIOS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies."
+      "notes": "Game Boy Advance, Game Boy Color et Game Boy : rapide et fidèle, idéal pour les hacks .gba. Fonctionne sans BIOS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies.",
+      "flatpak": "io.mgba.mGBA"
     },
     {
       "id": "rmg",
@@ -229,7 +250,8 @@
       "saves": [
         "Save"
       ],
-      "notes": "Recommandé pour la N64 : moteur mupen64plus, rendu ParaLLEl-RDP ou GLideN64, manettes configurées automatiquement."
+      "notes": "Recommandé pour la N64 : moteur mupen64plus, rendu ParaLLEl-RDP ou GLideN64, manettes configurées automatiquement.",
+      "flatpak": "com.github.Rosalie241.RMG"
     },
     {
       "id": "ares",
@@ -248,6 +270,9 @@
         ],
         "linux": [
           "ares"
+        ],
+        "mac": [
+          "ares.app"
         ]
       },
       "args": [
@@ -278,6 +303,19 @@
         "gb": "Game Boy",
         "gbc": "Game Boy Color",
         "gba": "Game Boy Advance"
+      },
+      "flatpak": "dev.ares.ares",
+      "dataDirs": {
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/ares"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.local/share/ares"
+          }
+        ]
       }
     },
     {
@@ -293,6 +331,9 @@
         "linux": [
           "melonDS",
           "melonds"
+        ],
+        "mac": [
+          "melonDS.app"
         ]
       },
       "args": [
@@ -311,7 +352,20 @@
         ]
       },
       "website": "https://melonds.kuribo64.net/downloads.php",
-      "notes": "Le meilleur émulateur DS/DSi. Fonctionne sans BIOS (FreeBIOS intégré) ; les BIOS et le firmware de ta console se configurent dans melonDS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies."
+      "notes": "Le meilleur émulateur DS/DSi. Fonctionne sans BIOS (FreeBIOS intégré) ; les BIOS et le firmware de ta console se configurent dans melonDS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies.",
+      "flatpak": "net.kuribo64.melonDS",
+      "dataDirs": {
+        "mac": [
+          {
+            "path": "%HOME%/Library/Preferences/melonDS"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.config/melonDS"
+          }
+        ]
+      }
     },
     {
       "id": "azahar",
@@ -325,6 +379,9 @@
         ],
         "linux": [
           "azahar"
+        ],
+        "mac": [
+          "Azahar.app"
         ]
       },
       "args": [
@@ -360,6 +417,11 @@
           {
             "path": "%APPDATA%/azahar-emu"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Azahar"
+          }
         ]
       },
       "saves": [
@@ -376,7 +438,8 @@
           "help": "Nécessaire uniquement pour les jeux chiffrés."
         }
       ],
-      "notes": "Successeur de Citra. Au premier lancement, Azahar propose de reprendre les données de Citra."
+      "notes": "Successeur de Citra. Au premier lancement, Azahar propose de reprendre les données de Citra.",
+      "flatpak": "org.azahar_emu.Azahar"
     },
     {
       "id": "citra",
@@ -390,6 +453,10 @@
         ],
         "linux": [
           "citra-qt"
+        ],
+        "mac": [
+          "Citra.app",
+          "citra-qt.app"
         ]
       },
       "args": [
@@ -418,6 +485,11 @@
           {
             "path": "%APPDATA%/citra-emu"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Citra"
+          }
         ]
       },
       "saves": [
@@ -434,7 +506,8 @@
           "help": "Nécessaire uniquement pour les jeux chiffrés."
         }
       ],
-      "notes": "Projet arrêté en mars 2024 : plus aucune mise à jour. Azahar est son successeur direct."
+      "notes": "Projet arrêté en mars 2024 : plus aucune mise à jour. Azahar est son successeur direct.",
+      "flatpak": "org.citra_emu.citra"
     },
     {
       "id": "dolphin",
@@ -449,6 +522,9 @@
         ],
         "linux": [
           "dolphin-emu"
+        ],
+        "mac": [
+          "Dolphin.app"
         ]
       },
       "args": [
@@ -494,13 +570,19 @@
           {
             "path": "%APPDATA%/dolphin-emu"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Dolphin"
+          }
         ]
       },
       "saves": [
         "GC",
         "Wii/title/*/*/data"
       ],
-      "notes": "GameCube et Wii. Distribué en .7z : Playnest installe 7-Zip automatiquement si besoin."
+      "notes": "GameCube et Wii. Distribué en .7z : Playnest installe 7-Zip automatiquement si besoin.",
+      "flatpak": "org.DolphinEmu.dolphin-emu"
     },
     {
       "id": "cemu",
@@ -515,6 +597,9 @@
         "linux": [
           "Cemu",
           "cemu"
+        ],
+        "mac": [
+          "Cemu.app"
         ]
       },
       "args": [
@@ -554,6 +639,11 @@
           {
             "path": "%APPDATA%/Cemu"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Cemu"
+          }
         ]
       },
       "saves": [
@@ -568,7 +658,8 @@
           "help": "Nécessaire uniquement pour les images WUD/WUX chiffrées."
         }
       ],
-      "notes": "Émulateur Wii U. Les packs graphiques (60 FPS, résolution) se gèrent depuis Cemu."
+      "notes": "Émulateur Wii U. Les packs graphiques (60 FPS, résolution) se gèrent depuis Cemu.",
+      "flatpak": "info.cemu.Cemu"
     },
     {
       "id": "eden",
@@ -585,6 +676,9 @@
         ],
         "linux": [
           "eden"
+        ],
+        "mac": [
+          "Eden.app"
         ]
       },
       "args": [
@@ -620,6 +714,11 @@
         "linux": [
           {
             "path": "%APPDATA%/eden"
+          }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/eden"
           }
         ]
       },
@@ -664,6 +763,9 @@
         ],
         "linux": [
           "citron"
+        ],
+        "mac": [
+          "citron.app"
         ]
       },
       "args": [
@@ -730,6 +832,9 @@
         "linux": [
           "Ryujinx",
           "ryujinx"
+        ],
+        "mac": [
+          "Ryujinx.app"
         ]
       },
       "args": [
@@ -761,6 +866,11 @@
           {
             "path": "%HOME%/.config/Ryujinx"
           }
+        ],
+        "mac": [
+          {
+            "path": "%HOME%/Library/Application Support/Ryujinx"
+          }
         ]
       },
       "saves": [
@@ -781,7 +891,8 @@
           "help": "Installe-le depuis l'émulateur : Outils > Installer le firmware."
         }
       ],
-      "notes": "Continuation communautaire de Ryujinx. Très bonne compatibilité."
+      "notes": "Continuation communautaire de Ryujinx. Très bonne compatibilité.",
+      "flatpak": "io.github.ryubing.Ryujinx"
     },
     {
       "id": "lichii",

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Playnest
+GenericName=Game launcher
+GenericName[fr]=Lanceur de jeux
+Comment=All your Nintendo games in one app, from the NES to the Switch 2
+Comment[fr]=Tous tes jeux Nintendo dans une seule application, de la NES à la Switch 2
+Exec=Playnest
+Icon=playnest
+Terminal=false
+Categories=Game;Emulator;
+StartupWMClass=Playnest

@@ -28,6 +28,6 @@ signals:
 
 private:
     SelfUpdate() = default;
-    QString m_version, m_url, m_asset, m_notes;
+    QString m_version, m_url, m_asset, m_notes, m_page;
     bool m_busy = false;
 };

@@ -5,6 +5,8 @@
 #include "Registry.h"
 #include "Settings.h"
 
+#include <QProcessEnvironment>
+#include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
 #include <QUrl>
@@ -81,6 +83,21 @@ bool Launcher::launch(const Game& g, const QString& emulatorId, QString* error) 
     m_proc->setProgram(exe);
     m_proc->setArguments(args);
     m_proc->setWorkingDirectory(QFileInfo(exe).absolutePath());
+#ifdef Q_OS_LINUX
+    if (exe.endsWith(QLatin1String(".appimage"), Qt::CaseInsensitive)) {
+        // Une AppImage se monte avec FUSE. Sans lui (Ubuntu récent sans libfuse2), elle sait se décompresser
+        // elle-même avant de démarrer : un peu plus lent, mais ça marche partout.
+        const bool fuse = !QStandardPaths::findExecutable(QStringLiteral("fusermount")).isEmpty() ||
+                          !QStandardPaths::findExecutable(QStringLiteral("fusermount3")).isEmpty();
+        const bool fuse2 = QFileInfo::exists(QStringLiteral("/usr/lib/x86_64-linux-gnu/libfuse.so.2")) ||
+                           QFileInfo::exists(QStringLiteral("/usr/lib64/libfuse.so.2")) || QFileInfo::exists(QStringLiteral("/usr/lib/libfuse.so.2"));
+        if (!fuse || !fuse2) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert(QStringLiteral("APPIMAGE_EXTRACT_AND_RUN"), QStringLiteral("1"));
+            m_proc->setProcessEnvironment(env);
+        }
+    }
+#endif
     m_proc->setProcessChannelMode(QProcess::MergedChannels);
     m_output.clear();
     connect(m_proc, &QProcess::readyRead, this, [this] {
@@ -110,9 +127,26 @@ bool Launcher::launch(const Game& g, const QString& emulatorId, QString* error) 
 
 bool Launcher::launchDirect(const Game& g, QString* error) {
     const QString exe = QDir::toNativeSeparators(QFileInfo(g.path).absoluteFilePath());
+    QString program = exe;
+    QStringList arguments;
+#ifndef Q_OS_WIN
+    if (exe.endsWith(QLatin1String(".exe"), Qt::CaseInsensitive)) {
+        // Un jeu Windows (fan game) passe par Wine sous Linux et macOS.
+        program = QStandardPaths::findExecutable(QStringLiteral("wine"));
+        if (program.isEmpty())
+            program = QStandardPaths::findExecutable(QStringLiteral("wine64"));
+        if (program.isEmpty()) {
+            if (error)
+                *error = tr("Ce jeu est un programme Windows : installe Wine pour le lancer sur ce système.");
+            return false;
+        }
+        arguments << exe;
+    }
+#endif
     delete m_proc;
     m_proc = new QProcess(this);
-    m_proc->setProgram(exe);
+    m_proc->setProgram(program);
+    m_proc->setArguments(arguments);
     m_proc->setWorkingDirectory(QFileInfo(exe).absolutePath()); // les fan games lisent leurs fichiers à côté de l'exécutable
     m_proc->setProcessChannelMode(QProcess::MergedChannels);
     m_output.clear();
