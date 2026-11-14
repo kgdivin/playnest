@@ -122,4 +122,4 @@ if(PLAYNEST_BUILD_TESTS)
     target_include_directories(playnest_detect_test PRIVATE src)
 endif()
 
-install(TARGETS Playnest RUNTIME DESTINATION .)
+install(TARGETS Playnest RUNTIME DESTINATION . BUNDLE DESTINATION .)
