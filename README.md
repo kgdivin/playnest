@@ -24,14 +24,33 @@ Playnest ne contient aucun code d'émulation. Il pilote les meilleurs émulateur
 
 ## Démarrage
 
-1. Décompresse `Playnest-windows-x64.zip` dans un dossier personnel, par exemple `C:\Jeux\Playnest`. Évite Program Files.
+1. Sous Windows, décompresse `Playnest-windows-x64.zip` dans un dossier personnel, par exemple `C:\Jeux\Playnest`. Évite Program Files.
 2. Lance `Playnest.exe`. Windows peut afficher « Windows a protégé votre ordinateur » parce que l'application n'est pas signée : clique sur **Informations complémentaires**, puis **Exécuter quand même**.
 3. Au premier lancement, l'écran de bienvenue te demande ta langue et où sont tes jeux. Le choix conseillé crée un dossier `Jeux Nintendo` dans ton dossier personnel.
 4. Glisse tes jeux sur la fenêtre : chacun est reconnu, rangé par console et reçoit sa jaquette.
 5. Double-clique sur un jeu. Si son émulateur manque, choisis **Installer et jouer**.
 
+### Linux
+1. Télécharge `Playnest-linux-x86_64.AppImage` depuis la page [Releases](https://github.com/kgdivin/playnest/releases/latest).
+2. Rends le fichier exécutable : clic droit > Propriétés > Autoriser l'exécution, ou `chmod +x Playnest-linux-x86_64.AppImage`.
+3. Double-clique dessus. Rien à installer ; il faut une distribution de 2022 ou plus récente (Ubuntu 22.04, Fedora 36, Debian 12…).
+
+- Les émulateurs s'installent en un clic au format AppImage quand leur équipe en publie une. Dolphin n'en publie pas : installe-le par Flatpak ou par ta distribution, Playnest le retrouve.
+- Les émulateurs installés par Flatpak, par ta distribution, ou posés en AppImage dans `~/Applications`, `~/AppImages` ou Téléchargements sont reconnus, avec leurs sauvegardes.
+- Les fan games Windows (`Game.exe`) se lancent avec Wine s'il est installé.
+- Playnest se met à jour tout seul en remplaçant son AppImage.
+
+### macOS (bêta)
+1. Télécharge `Playnest-macos.dmg` depuis la page [Releases](https://github.com/kgdivin/playnest/releases/latest), ouvre-le et glisse Playnest dans Applications.
+2. Au premier lancement, fais un clic droit sur Playnest > **Ouvrir**, puis confirme : l'application n'est pas signée par un compte développeur Apple.
+
+- La version macOS est compilée et lancée automatiquement sur un Mac de GitHub à chaque version, mais elle n'a pas encore été essayée avec de vrais émulateurs : c'est une bêta.
+- Playnest retrouve les émulateurs installés dans Applications (Dolphin, mGBA, melonDS, Azahar, Cemu, Ryujinx…). Leur installation reste manuelle : la page Émulateurs ouvre leur site officiel.
+- Fonctionne sur les Mac Intel et Apple Silicon, à partir de macOS 12. La manette n'est pas encore gérée sur Mac.
+- Pour mettre à jour, Playnest ouvre la page de la nouvelle version : remplace l'application dans Applications.
+
 ### Envoyer Playnest à un ami
-Donne-lui simplement le fichier zip (ou une copie du dossier de l'application). Tes jeux, tes réglages et tes sauvegardes ne sont pas dedans : ils sont gardés dans `%APPDATA%\Playnest` sur ton PC. Ton ami démarre avec l'écran de bienvenue, dans sa langue.
+Donne-lui le lien de la page [Releases](https://github.com/kgdivin/playnest/releases/latest) : il y prend le fichier pour Windows, Linux ou macOS. Tu peux aussi lui envoyer directement le zip. Tes jeux, tes réglages et tes sauvegardes ne sont pas dedans : ils sont gardés dans `%APPDATA%\Playnest` sur ton PC. Ton ami démarre avec l'écran de bienvenue, dans sa langue.
 
 ### Tu utilisais Cartouche ?
 Playnest est le nouveau nom de Cartouche. Au premier lancement, ta bibliothèque, tes réglages, tes jaquettes et tes émulateurs installés sont repris automatiquement (le dossier `%APPDATA%\Cartouche` devient `%APPDATA%\Playnest`). Ton dossier `Jeux Nintendo` ne bouge pas. Tu peux supprimer l'ancien `Cartouche.exe`.
@@ -168,9 +187,9 @@ cmake -S . -B build-win -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64-cross.cm
       -DCMAKE_PREFIX_PATH=/opt/qt6-win-static -DQT_HOST_PATH=/usr
 ```
 
-**GitHub Actions** : `.github/workflows/build.yml` compile Playnest sous Linux et lance les tests de détection à chaque envoi. Le zip Windows peut aussi y être fabriqué à la demande (bouton **Run workflow**).
+**GitHub Actions** : à chaque envoi, `.github/workflows/build.yml` compile Playnest pour Linux (AppImage), Windows (zip) et macOS (dmg), lance les tests de détection, puis lance réellement l'application sur chaque système et vérifie qu'elle affiche sa fenêtre.
 
-**Publier une version** : crée une release `vX.Y.Z` sur GitHub et joins-y `Playnest-windows-x64.zip`. Playnest la détecte et propose la mise à jour à tous ceux qui l'utilisent.
+**Publier une version** : change le numéro de version dans `CMakeLists.txt`, décris les nouveautés dans `RELEASE_NOTES.md` et envoie sur `main`. Si cette version n'a pas encore été publiée, le workflow crée la release avec les trois fichiers. Playnest la détecte et propose la mise à jour à tous ceux qui l'utilisent.
 
 **Tests** (avec `-DPLAYNEST_BUILD_TESTS=ON`) :
 - `tests/make_samples.py` crée des en-têtes de jeux synthétiques (aucun contenu de jeu).

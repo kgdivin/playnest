@@ -24,13 +24,29 @@ Playnest contains no emulation code. It drives the best open-source emulators, e
 
 ## Getting started
 
-1. Unzip `Playnest-windows-x64.zip` into a personal folder, for example `C:\Games\Playnest`. Avoid Program Files.
+1. On Windows, unzip `Playnest-windows-x64.zip` into a personal folder, for example `C:\Games\Playnest`. Avoid Program Files.
 2. Run `Playnest.exe`. Windows may show "Windows protected your PC" because the app is not signed: click **More info**, then **Run anyway**.
 3. On first launch, the welcome screen asks for your language and where your games are. The recommended choice creates a `Nintendo Games` folder in your home folder.
 4. Drop your games on the window: each one is recognized, sorted by console and gets its cover.
 5. Double-click a game. If its emulator is missing, choose **Install and play**.
 
 Playnest provides no games, keys, BIOS or firmware. Use copies of your own games and the system files dumped from your own consoles.
+
+### Linux
+Download `Playnest-linux-x86_64.AppImage` from the [Releases](https://github.com/kgdivin/playnest/releases/latest) page, make it executable (right-click > Properties > Allow executing, or `chmod +x`), then double-click it. It needs a distribution from 2022 or later (Ubuntu 22.04, Fedora 36, Debian 12…).
+
+- Emulators install in one click as AppImages when their team publishes one. Dolphin does not: install it with Flatpak or your distribution, and Playnest finds it.
+- Emulators installed with Flatpak, with your distribution, or dropped as AppImages in `~/Applications`, `~/AppImages` or Downloads are detected, along with their saves.
+- Windows fan games (`Game.exe`) run through Wine when it is installed.
+- Playnest updates itself by replacing its AppImage.
+
+### macOS (beta)
+Download `Playnest-macos.dmg` from the [Releases](https://github.com/kgdivin/playnest/releases/latest) page, open it and drag Playnest into Applications. On first launch, right-click Playnest > **Open**, then confirm: the app is not signed with an Apple developer account.
+
+- The macOS version is built and launched automatically on a GitHub Mac for every release, but it has not been tried with real emulators yet: it is a beta.
+- Playnest finds the emulators installed in Applications (Dolphin, mGBA, melonDS, Azahar, Cemu, Ryujinx…). Installing them stays manual: the Emulators page opens their official website.
+- Works on Intel and Apple Silicon Macs, macOS 12 or later. Controllers are not supported on Mac yet.
+- To update, Playnest opens the page of the new version: replace the app in Applications.
 
 ## What Playnest does
 
