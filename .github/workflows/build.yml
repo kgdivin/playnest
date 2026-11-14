@@ -82,8 +82,17 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = "$env:IQTA_TOOLS\mingw1310_64\bin;$env:PATH"
-          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DPLAYNEST_BUILD_TESTS=ON
           cmake --build build --parallel 4
+
+      # Le kit de co-op se lance par un fichier .bat : on vérifie sur un vrai Windows qu'il démarre,
+      # même depuis un dossier dont le nom contient des espaces.
+      - name: Essai du lancement d'un fichier de démarrage
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:IQTA_TOOLS\mingw1310_64\bin;$env:PATH"
+          build\playnest_detect_test.exe --coop-launch-test "$env:RUNNER_TEMP\Kit de test"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Empaqueter
         shell: pwsh

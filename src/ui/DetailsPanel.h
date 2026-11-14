@@ -36,6 +36,7 @@ public:
 
 signals:
     void playRequested(const QString& path);
+    void coopRequested(const QString& path); // jeu en ligne à plusieurs (kit de co-op)
     void favoriteToggled(const QString& path);
     void openFolderRequested(const QString& path);
     void coverMenuRequested(const QString& path, const QPoint& globalPos);
@@ -60,6 +61,7 @@ private:
     QLabel* m_emuHint;
     QPushButton* m_install;
     QPushButton* m_play;
+    QPushButton* m_coop;
     QToolButton* m_fav;
     QToolButton* m_folder;
     QToolButton* m_coverBtn;

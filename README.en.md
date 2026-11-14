@@ -58,6 +58,7 @@ Download `Playnest-macos.dmg` from the [Releases](https://github.com/kgdivin/pla
 - **Switch 2.** Lichii `.nup` packages are read directly (title, icon, bundled updates and DLC). Decompressed games (a `base` folder with `exefs` and `romfs`) are named from their title ID.
 - **PC games and fan games.** RPG Maker, Pokémon Essentials, Pokémon SDK and RPG Maker MV/MZ games are recognized and launched directly, without an emulator.
 - **Controller.** The whole app can be driven with an Xbox or XInput-compatible controller.
+- **Ocarina of Time co-op (Windows, experimental).** On the Ocarina of Time remake's page, **Play co-op** installs and starts [OoT Co-op](https://github.com/daurosk/oot-remake-multiplayer), an independent fan project for online play with up to 16 players. Playnest downloads the kit from the project's page and contains none of it. The kit builds a PC version of the game from your own file (10 to 45 minutes the first time, about 60 GB free, an RTX 20 or RX 6000 card or newer, 16 GB of memory).
 
 ## Shortcuts
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(Playnest VERSION 3.2.0 LANGUAGES CXX)
+project(Playnest VERSION 3.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,6 +25,7 @@ set(SOURCES
     src/core/Library.cpp src/core/Library.h
     src/core/Scanner.cpp src/core/Scanner.h
     src/core/Launcher.cpp src/core/Launcher.h
+    src/core/CoopKit.cpp src/core/CoopKit.h
     src/core/AppInfo.h
     src/core/Lang.cpp src/core/Lang.h
     src/core/Net.cpp src/core/Net.h
@@ -111,7 +112,7 @@ if(PLAYNEST_BUILD_TESTS)
     qt_add_executable(playnest_detect_test
         tests/detect_test.cpp
         src/core/Paths.cpp src/core/Lang.cpp src/core/Registry.cpp src/core/Settings.cpp src/core/RomDetector.cpp
-        src/core/Library.cpp src/core/CoverManager.cpp src/core/Net.cpp src/core/Launcher.cpp
+        src/core/Library.cpp src/core/CoverManager.cpp src/core/Net.cpp src/core/Launcher.cpp src/core/CoopKit.cpp
         src/core/Emulators.cpp src/core/Archive.cpp src/core/Tools.cpp src/core/Saves.cpp src/core/Organizer.cpp
         resources/playnest.qrc)
     target_link_libraries(playnest_detect_test PRIVATE Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::GuiPrivate Qt6::Network Qt6::Concurrent)

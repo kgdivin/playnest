@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 
+#include "../core/CoopKit.h"
+#include "../core/Net.h"
 #include "../core/CoverManager.h"
 #include "../core/AppInfo.h"
 #include "../core/Emulators.h"
@@ -26,6 +28,10 @@
 #include "Sidebar.h"
 #include "Theme.h"
 
+#include <QGuiApplication>
+#include <QtConcurrent>
+#include <QProgressDialog>
+#include <QFutureWatcher>
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -293,6 +299,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     });
 
     connect(m_details, &DetailsPanel::playRequested, this, [this](const QString& p) { launchGame(p); });
+    connect(m_details, &DetailsPanel::coopRequested, this, &MainWindow::playCoop);
     connect(m_details, &DetailsPanel::favoriteToggled, this, &MainWindow::toggleFavorite);
     connect(m_details, &DetailsPanel::openFolderRequested, this, [](const QString& p) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(p).absolutePath()));
@@ -954,6 +961,163 @@ void MainWindow::updateNavBadges() {
     m_navEmus->setToolTip(updates > 0 ? tr("%n mise(s) à jour disponible(s)", nullptr, updates) : QString());
 }
 
+// --- Kit de co-op (Ocarina of Time à plusieurs) ---------------------------------------------
+// Playnest ne contient rien du kit : il le télécharge depuis la page du projet, le décompresse dans le
+// dossier choisi et lance son fichier de démarrage. Le kit construit ensuite le jeu et se met à jour seul.
+void MainWindow::playCoop(const QString& path) {
+    const Game* g = m_lib->find(path);
+    if (!g || !CoopKit::appliesTo(*g))
+        return;
+    if (m_launcher->isRunning()) {
+        notify(tr("Ferme le jeu en cours avant de lancer le co-op."), true);
+        return;
+    }
+    if (CoopKit::installed()) {
+        startCoop(path);
+        return;
+    }
+    const QString name = QString::fromLatin1(CoopKit::kName);
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Jouer en co-op"));
+    box.setIcon(QMessageBox::Information);
+    box.setText(tr("%1 ajoute le jeu en ligne à plusieurs à « %2 ».").arg(name, g->displayTitle()));
+    box.setInformativeText(
+        tr("C'est un projet de fans indépendant de Playnest, encore en pré-version. Playnest télécharge son kit depuis sa page officielle ; "
+           "le kit construit ensuite une version PC du jeu à partir de ton propre fichier, puis se met à jour tout seul.\n\n"
+           "Il te faut :\n"
+           "• une carte graphique NVIDIA RTX 20 ou AMD RX 6000, ou plus récente ;\n"
+           "• 16 Go de mémoire et environ %1 Go libres sur le disque ;\n"
+           "• 10 à 45 minutes pour la première construction, une seule fois ;\n"
+           "• la même version du kit chez chaque joueur, et chacun sa propre copie du jeu.\n\n"
+           "Windows Defender peut afficher une alerte sur les scripts du kit : le projet l'annonce comme une fausse alerte.")
+            .arg(CoopKit::kNeededGb));
+    QPushButton* install = box.addButton(tr("Installer le kit…"), QMessageBox::AcceptRole);
+    QPushButton* have = box.addButton(tr("J'ai déjà le kit…"), QMessageBox::ActionRole);
+    QPushButton* site = box.addButton(tr("Page du projet"), QMessageBox::HelpRole);
+    box.addButton(tr("Annuler"), QMessageBox::RejectRole);
+    box.setDefaultButton(install);
+    box.exec();
+    if (box.clickedButton() == site) {
+        QDesktopServices::openUrl(QUrl(QString::fromLatin1(CoopKit::kWebsite)));
+    } else if (box.clickedButton() == have) {
+        const QString dir = QFileDialog::getExistingDirectory(this, tr("Dossier du kit %1").arg(name), QFileInfo(CoopKit::suggestedDir()).absolutePath());
+        if (dir.isEmpty())
+            return;
+        if (!CoopKit::adopt(dir)) {
+            QMessageBox::warning(this, tr("Jouer en co-op"), tr("« %1 » est introuvable dans ce dossier.").arg(QString::fromLatin1(CoopKit::kStartFile)));
+            return;
+        }
+        startCoop(path);
+    } else if (box.clickedButton() == install) {
+        // Le kit construit le jeu sur place : il lui faut un dossier court, sur un disque qui a de la place.
+        QString dir = CoopKit::suggestedDir();
+        for (;;) {
+            bool ok = false;
+            dir = QInputDialog::getText(this, tr("Dossier du kit %1").arg(name),
+                                        tr("Où installer le kit ? Choisis un dossier court, sur un disque avec %1 Go libres :").arg(CoopKit::kNeededGb),
+                                        QLineEdit::Normal, dir, &ok)
+                      .trimmed();
+            if (!ok || dir.isEmpty())
+                return;
+            const QString warning = CoopKit::dirWarning(dir);
+            if (warning.isEmpty())
+                break;
+            const auto answer = QMessageBox::warning(this, tr("Dossier du kit %1").arg(name), warning + QStringLiteral("\n\n") + tr("Installer ici quand même ?"),
+                                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer == QMessageBox::Yes)
+                break;
+        }
+        installCoopKit(dir, path);
+    }
+}
+
+void MainWindow::installCoopKit(const QString& dir, const QString& gamePath) {
+    const QString name = QString::fromLatin1(CoopKit::kName);
+    auto* progress = new QProgressDialog(tr("Recherche de la dernière version de %1…").arg(name), QString(), 0, 0, this);
+    progress->setWindowTitle(tr("Jouer en co-op"));
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(0);
+    progress->setAutoClose(false);
+    progress->setAutoReset(false);
+    progress->show();
+    auto fail = [this, progress](const QString& why) {
+        progress->deleteLater();
+        QMessageBox box(QMessageBox::Warning, tr("Jouer en co-op"), tr("Le kit n'a pas pu être installé : %1").arg(why), QMessageBox::Ok, this);
+        QPushButton* page = box.addButton(tr("Page du projet"), QMessageBox::HelpRole);
+        box.exec();
+        if (box.clickedButton() == page)
+            QDesktopServices::openUrl(QUrl(QString::fromLatin1(CoopKit::kWebsite) + QStringLiteral("/releases")));
+    };
+    const QUrl api(QStringLiteral("https://api.github.com/repos/%1/releases?per_page=10").arg(QString::fromLatin1(CoopKit::kRepo)));
+    Net::instance().get(api, this, [this, progress, fail, dir, gamePath, name](bool ok, const QByteArray& data, const QString& err) {
+        CoopKit::Release rel;
+        if (!ok || !CoopKit::pickRelease(data, &rel)) {
+            fail(ok ? tr("aucun kit dans les dernières versions du projet") : err);
+            return;
+        }
+        const QString zip = Paths::downloadsDir() + QLatin1Char('/') + rel.asset;
+        progress->setLabelText(tr("Téléchargement de %1 %2…").arg(name, rel.version));
+        Net::instance().download(
+            QUrl(rel.url), zip, this,
+            [progress](qint64 received, qint64 total) {
+                if (total > 0) {
+                    progress->setMaximum(1000);
+                    progress->setValue(int(received * 1000 / total));
+                }
+            },
+            [this, progress, fail, dir, gamePath, zip, rel, name](bool done, const QString& downloadError) {
+                if (!done) {
+                    fail(downloadError);
+                    return;
+                }
+                progress->setMaximum(0);
+                progress->setLabelText(tr("Installation…"));
+                auto* watcher = new QFutureWatcher<QString>(this);
+                connect(watcher, &QFutureWatcher<QString>::finished, this, [this, watcher, progress, fail, gamePath, zip, rel, name] {
+                    const QString error = watcher->result();
+                    watcher->deleteLater();
+                    QFile::remove(zip);
+                    if (!error.isEmpty()) {
+                        fail(error);
+                        return;
+                    }
+                    progress->deleteLater();
+                    qInfo("Kit de co-op %s installé dans %s", qUtf8Printable(rel.version), qUtf8Printable(CoopKit::installDir()));
+                    notify(tr("%1 %2 est installé.").arg(name, rel.version));
+                    startCoop(gamePath);
+                });
+                watcher->setFuture(QtConcurrent::run([zip, dir]() -> QString {
+                    QString error;
+                    return CoopKit::installZip(zip, dir, &error) ? QString() : (error.isEmpty() ? QStringLiteral("?") : error);
+                }));
+            });
+    });
+}
+
+void MainWindow::startCoop(const QString& gamePath) {
+    const Game* g = m_lib->find(gamePath);
+    if (!g)
+        return;
+    // Au premier démarrage, le kit demande le jeu dans sa fenêtre : son chemin est prêt à être collé.
+    const QString file = CoopKit::gameFileFor(*g);
+    QGuiApplication::clipboard()->setText(file);
+    if (!Settings::instance().value(QStringLiteral("extras/oot-coop/explained"), false).toBool()) {
+        QMessageBox::information(
+            this, tr("Jouer en co-op"),
+            tr("Une fenêtre de commandes va s'ouvrir : c'est le kit %1.\n\n"
+               "La première fois, il demande ton fichier de jeu. Son emplacement est déjà copié : fais un clic droit dans la fenêtre pour le coller, puis Entrée.\n\n%2\n\n"
+               "Il construit ensuite le jeu (10 à 45 minutes, une seule fois). Dans le jeu, « Host » et « Join » sont dans l'onglet Multiplayer du menu : F1 au clavier, ou − et + ensemble à la manette.")
+                .arg(QString::fromLatin1(CoopKit::kName), file));
+        Settings::instance().setValue(QStringLiteral("extras/oot-coop/explained"), true);
+    }
+    QString error;
+    if (!CoopKit::launch(&error)) {
+        notify(error, true);
+        return;
+    }
+    notify(tr("Kit %1 lancé. L'emplacement du jeu est copié, au cas où il le demande.").arg(QString::fromLatin1(CoopKit::kName)));
+}
+
 void MainWindow::notify(const QString& text, bool error) {
     m_toast->showMessage(text, error ? Theme::Color::danger : Theme::Color::teal, error ? 4500 : 2800);
 }
@@ -1534,6 +1698,12 @@ void MainWindow::debugShow(const QString& what) {
         changeLanguage(what.mid(5));
         return;
     }
+    if (what.startsWith(QLatin1String("coop:"))) {
+        for (const Game& g : m_lib->games())
+            if (g.displayTitle().startsWith(what.mid(5)))
+                return playCoop(g.path);
+        return;
+    }
     if (what.startsWith(QLatin1String("select:"))) {
         for (const Game& g : m_lib->games())
             if (g.displayTitle().startsWith(what.mid(7)))
@@ -1708,7 +1878,7 @@ void MainWindow::goToGame(const QString& path) {
         return;
     showPage(LibraryPage);
     const QModelIndex idx = m_filter->mapFromSource(m_model->index(m_lib->indexOf(path), 0));
-    if (!idx.isValid()) {
+    if (m_onHome || !idx.isValid()) { // depuis l'accueil, on ouvre la liste des jeux pour montrer celui-ci
         m_search->clear();
         const QString cat = g->isAddon && Settings::instance().hideAddons() ? QStringLiteral("__addons") : QStringLiteral("__all");
         m_sidebar->selectCategory(cat);

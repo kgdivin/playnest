@@ -390,6 +390,12 @@ make_nup("Reel/switch 2/Playnest Legends S2E [0100F43008C44000].nup", [
     (0x0100F43008C45001, 0, 2, b""),
 ])
 
+# --- Jeu Switch 2 qui a un kit de co-op : le bouton « Jouer en co-op » apparaît sur sa fiche (Windows)
+make_nup("Reel/switch 2/Playnest of Time [0400486024DEC000].nup", [
+    (0x0400486024DEC000, 0, 0, tlv(1, npdm(True)) + tlv(2, nacp({0: "Playnest of Time", 3: "Playnest du Temps"}, "1.0.0"))),
+    (0x0400486024DEC800, 131072, 1, b""),
+])
+
 
 # --- Consoles rétro : NES, Super Nintendo, Game Boy, Game Boy Color, Game Boy Advance
 w("Retro/Playnest Bros (Europe).nes", b"NES\x1a" + b"\0" * 60)

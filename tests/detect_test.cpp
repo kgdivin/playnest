@@ -1,5 +1,7 @@
 // Test de détection : analyse un dossier et affiche ce que Playnest reconnaît.
 // Usage : playnest_detect_test <dossier>
+#include "core/Archive.h"
+#include "core/CoopKit.h"
 #include "core/CoverManager.h"
 #include "core/Emulators.h"
 #include "core/Launcher.h"
@@ -11,6 +13,7 @@
 #include "core/Saves.h"
 #include "core/Settings.h"
 
+#include <QThread>
 #include <QCoreApplication>
 #include <QDirIterator>
 #include <QEventLoop>
@@ -189,6 +192,76 @@ static int renameTest(const QString& root) {
     out << "Dossier Jeux/Switch : " << (consoleKept ? "en place" : "DÉPLACÉ") << "\n";
     out.flush();
     return (again.moves.isEmpty() && ok == lib.games().size() && consoleKept) ? 0 : 1;
+}
+
+// Kit de co-op : choix de la version dans la liste de GitHub, puis installation d'un zip du kit.
+static int coopTest(const QString& zip, const QString& dir) {
+    QTextStream out(stdout);
+    const QByteArray releases = R"([
+      {"tag_name":"v0.10.1","draft":false,"prerelease":true,"assets":[
+        {"name":"Update.bat","browser_download_url":"https://example.invalid/Update.bat"},
+        {"name":"oot-coop-v0.10.1.zip","browser_download_url":"https://example.invalid/oot-coop-v0.10.1.zip"}]},
+      {"tag_name":"v0.9.0","draft":false,"prerelease":true,"assets":[
+        {"name":"oot-coop-v0.9.0.zip","browser_download_url":"https://example.invalid/old.zip"}]}
+    ])";
+    CoopKit::Release rel;
+    const bool picked = CoopKit::pickRelease(releases, &rel);
+    out << "Version choisie : " << rel.version << " " << rel.asset << (picked ? "" : " (aucune)") << "\n";
+    const bool none = !CoopKit::pickRelease("[{\"tag_name\":\"v1\",\"assets\":[{\"name\":\"Update.bat\"}]}]", nullptr);
+    QString error;
+    const bool installed = CoopKit::installZip(zip, dir, &error);
+    out << "Installation : " << (installed ? "ok" : error) << ", dossier retenu : " << CoopKit::installDir() << "\n";
+    const bool start = QFileInfo(dir + QLatin1Char('/') + QString::fromLatin1(CoopKit::kStartFile)).isFile();
+    const bool noStaging = !QFileInfo::exists(dir + QStringLiteral(".playnest-tmp"));
+    out << "Fichier de démarrage : " << (start ? "présent" : "ABSENT") << ", " << Archive::listFiles(dir).size() << " fichiers\n";
+    // Une réinstallation garde les réglages du joueur.
+    const QString options = dir + QStringLiteral("/coop-options.ini");
+    QFile f(options);
+    const bool hadOptions = f.open(QIODevice::Append) && f.write("\nmarque = playnest\n") > 0;
+    f.close();
+    const bool again = CoopKit::installZip(zip, dir, &error);
+    QFile g(options);
+    const bool kept = g.open(QIODevice::ReadOnly) && g.readAll().contains("marque = playnest");
+    out << "Réinstallation : " << (again ? "ok" : error) << ", réglages " << (kept ? "gardés" : "PERDUS") << "\n";
+    Game nup;
+    nup.path = QStringLiteral("C:/Jeux/Zelda.nup");
+    nup.titleId = QStringLiteral("0400486024dec000");
+    Game dump;
+    dump.path = QStringLiteral("C:/Jeux/Zelda/base/exefs/main");
+    dump.titleId = nup.titleId;
+    Game other;
+    other.titleId = QStringLiteral("0400C3F00006E000");
+    out << "Jeu donné au kit : " << CoopKit::gameFileFor(nup) << " ; " << CoopKit::gameFileFor(dump) << "\n";
+    const bool applies = CoopKit::appliesTo(nup) && CoopKit::appliesTo(dump) && !CoopKit::appliesTo(other);
+    out << "Avertissement OneDrive : " << CoopKit::dirWarning(QStringLiteral("C:/Users/x/OneDrive/Bureau/kit")) << "\n";
+    out << "Dossier proposé : " << CoopKit::suggestedDir() << "\n";
+    out.flush();
+    return (picked && rel.asset == QLatin1String("oot-coop-v0.10.1.zip") && none && installed && start && noStaging && hadOptions && again && kept && applies) ? 0 : 1;
+}
+
+// Lancement du kit de co-op : un faux fichier de démarrage écrit un témoin, dans un dossier dont le nom contient des espaces.
+static int coopLaunchTest(const QString& dir) {
+    QTextStream out(stdout);
+    QDir().mkpath(dir);
+    const QString marker = dir + QStringLiteral("/launched.txt");
+    QFile::remove(marker);
+    QFile bat(dir + QLatin1Char('/') + QString::fromLatin1(CoopKit::kStartFile));
+    if (!bat.open(QIODevice::WriteOnly))
+        return 2;
+    bat.write("@echo off\r\necho ok> \"%~dp0launched.txt\"\r\n");
+    bat.close();
+    if (!CoopKit::adopt(dir))
+        return 3;
+    QString error;
+    const bool started = CoopKit::launch(&error);
+    bool ran = false;
+    for (int i = 0; i < 100 && !ran; ++i) {
+        QThread::msleep(100);
+        ran = QFileInfo::exists(marker);
+    }
+    out << "Lancement : " << (started ? "ok" : error) << ", fichier de démarrage " << (ran ? "exécuté" : "NON exécuté") << "\n";
+    out.flush();
+    return started && ran ? 0 : 1;
 }
 
 // Fichiers déposés : archive, application seule ou installateur ?
@@ -385,6 +458,10 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
+    if (argc >= 3 && QByteArray(argv[1]) == "--coop-launch-test")
+        return coopLaunchTest(QString::fromLocal8Bit(argv[2]));
+    if (argc >= 4 && QByteArray(argv[1]) == "--coop-test")
+        return coopTest(QString::fromLocal8Bit(argv[2]), QString::fromLocal8Bit(argv[3]));
     if (argc >= 3 && QByteArray(argv[1]) == "--classify") {
         QStringList files;
         for (int i = 2; i < argc; ++i)

@@ -1,3 +1,4 @@
+#include "../core/CoopKit.h"
 #include "../core/Lang.h"
 #include "DetailsPanel.h"
 
@@ -139,6 +140,13 @@ DetailsPanel::DetailsPanel(Library* lib, QWidget* parent) : QWidget(parent), m_l
     m_play->setMinimumHeight(48);
     v->addSpacing(4);
     v->addWidget(m_play);
+    // Jeu en ligne à plusieurs, pour le seul jeu qui a un kit de co-op (Windows).
+    m_coop = new QPushButton(Theme::icon(QStringLiteral("gamepad"), Theme::Color::text, 18), tr("Jouer en co-op (expérimental)"), m_content);
+    m_coop->setCursor(Qt::PointingHandCursor);
+    m_coop->setMinimumHeight(40);
+    m_coop->setToolTip(tr("Jusqu'à 16 joueurs en ligne avec le kit %1, un projet de fans indépendant.").arg(QString::fromLatin1(CoopKit::kName)));
+    m_coop->setVisible(false);
+    v->addWidget(m_coop);
 
     auto* actions = new QHBoxLayout();
     actions->setSpacing(6);
@@ -205,6 +213,7 @@ DetailsPanel::DetailsPanel(Library* lib, QWidget* parent) : QWidget(parent), m_l
     v->addStretch();
 
     connect(m_play, &QPushButton::clicked, this, [this] { emit playRequested(m_path); });
+    connect(m_coop, &QPushButton::clicked, this, [this] { emit coopRequested(m_path); });
     connect(m_fav, &QToolButton::clicked, this, [this] { emit favoriteToggled(m_path); });
     connect(m_folder, &QToolButton::clicked, this, [this] { emit openFolderRequested(m_path); });
     connect(m_coverBtn, &QToolButton::clicked, this, [this] {
@@ -253,6 +262,7 @@ void DetailsPanel::showGame(const QString& path) {
     m_play->setText(thisRunning ? tr("En cours…") : tr("Jouer"));
     m_play->setEnabled(!running && !g->missing);
     m_play->setVisible(!g->isAddon);
+    m_coop->setVisible(CoopKit::available() && CoopKit::appliesTo(*g) && !g->missing);
     m_fav->setVisible(!g->isAddon);
     m_coverBtn->setVisible(!g->isAddon);
 

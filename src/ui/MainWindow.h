@@ -78,6 +78,9 @@ private:
 
     void startScan();
     void launchGame(const QString& path, const QString& emulatorId = QString());
+    void playCoop(const QString& path);      // kit de co-op : l'installe au besoin, puis le lance
+    void installCoopKit(const QString& dir, const QString& gamePath);
+    void startCoop(const QString& gamePath);
     void showGameMenu(const QString& path, const QPoint& globalPos);
     void showCoverMenu(const QString& path, const QPoint& globalPos);
     void toggleFavorite(const QString& path);

@@ -49,6 +49,14 @@ Playnest ne contient aucun code d'émulation. Il pilote les meilleurs émulateur
 - Fonctionne sur les Mac Intel et Apple Silicon, à partir de macOS 12. La manette n'est pas encore gérée sur Mac.
 - Pour mettre à jour, Playnest ouvre la page de la nouvelle version : remplace l'application dans Applications.
 
+### Ocarina of Time en co-op (Windows, expérimental)
+Sur la fiche du remake d'Ocarina of Time (Switch 2), le bouton **Jouer en co-op** installe et lance [OoT Co-op](https://github.com/daurosk/oot-remake-multiplayer), un projet de fans indépendant qui permet de jouer en ligne jusqu'à 16.
+
+- Playnest ne contient rien de ce projet : il télécharge son kit depuis sa page officielle, le décompresse dans le dossier que tu choisis et lance son fichier de démarrage. Le kit se met ensuite à jour tout seul.
+- Le kit construit une version PC du jeu à partir de ton propre fichier : 10 à 45 minutes la première fois, environ 60 Go libres, une carte NVIDIA RTX 20 ou AMD RX 6000 au minimum et 16 Go de mémoire.
+- Au premier lancement, le kit demande le fichier du jeu : Playnest a déjà copié son emplacement, il suffit de le coller dans la fenêtre.
+- Chaque joueur doit avoir la même version du kit et sa propre copie du jeu. C'est une pré-version : tout ne fonctionne pas encore.
+
 ### Envoyer Playnest à un ami
 Donne-lui le lien de la page [Releases](https://github.com/kgdivin/playnest/releases/latest) : il y prend le fichier pour Windows, Linux ou macOS. Tu peux aussi lui envoyer directement le zip. Tes jeux, tes réglages et tes sauvegardes ne sont pas dedans : ils sont gardés dans `%APPDATA%\Playnest` sur ton PC. Ton ami démarre avec l'écran de bienvenue, dans sa langue.
 
