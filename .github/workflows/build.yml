@@ -134,9 +134,11 @@ jobs:
           name: Playnest-macos
           path: Playnest-macos.dmg
 
+  # Sur main : publie la version si elle est nouvelle.
+  # Sur une branche ci/… : dépose les fichiers dans une pré-version « ci-build », pour pouvoir les essayer avant.
   release:
     needs: [linux, windows, macos]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.linux.result == 'success' && needs.windows.result == 'success'
+    if: always() && github.event_name == 'push' && needs.linux.result == 'success' && needs.windows.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,12 +148,21 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Publier la version si elle est nouvelle
+      - name: Publier
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="$(sed -n 's/^project(Playnest VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
           ls -la dist
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            gh release delete ci-build --yes --cleanup-tag >/dev/null 2>&1 || true
+            sleep 3
+            gh release create ci-build dist/* --prerelease --title "Build de test $VERSION (ne pas utiliser)" \
+              --notes "Fichiers de test fabriqués automatiquement depuis la branche $GITHUB_REF_NAME. Prends plutôt la dernière version publiée." \
+              --target "$GITHUB_SHA"
+            exit 0
+          fi
+          gh release delete ci-build --yes --cleanup-tag >/dev/null 2>&1 || true
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "La version $VERSION est déjà publiée : rien à faire."
             exit 0
