@@ -257,8 +257,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     connect(m_lib, &Library::reset, this, [this] {
         m_sidebar->refreshCounts();
-    if (m_home)
-        m_home->refresh();
+        if (m_home)
+            m_home->refresh();
         m_details->refresh();
         updateHero();
     });
@@ -266,8 +266,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         if (path == m_details->currentPath())
             m_details->refresh();
         m_sidebar->refreshCounts();
-    if (m_home)
-        m_home->refresh();
+        if (m_home)
+            m_home->refresh();
         if (path == m_hero->path() || m_hero->isHidden())
             updateHero();
         else
@@ -477,8 +477,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(m_settingsPage, &SettingsPage::appearanceChanged, this, [this] {
         m_filter->setHideAddons(Settings::instance().hideAddons());
         m_sidebar->refreshCounts();
-    if (m_home)
-        m_home->refresh();
+        if (m_home)
+            m_home->refresh();
         updateGamepadState();
     });
 
@@ -1488,8 +1488,8 @@ void MainWindow::showGameMenu(const QString& path, const QPoint& pos) {
         QAction* a = sysMenu->addAction(s ? s->name : sid, this, [this, path, sid] {
             m_lib->update(path, [&](Game& x) { x.systemOverride = (sid == x.systemId) ? QString() : sid; });
             m_sidebar->refreshCounts();
-    if (m_home)
-        m_home->refresh();
+            if (m_home)
+                m_home->refresh();
         });
         a->setCheckable(true);
         a->setChecked(sid == game.system());

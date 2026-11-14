@@ -13,6 +13,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets Network Concurrent)
+# Qt 6.10 et suivants : les modules privés (QZipReader) se demandent à part.
+find_package(Qt6 QUIET COMPONENTS CorePrivate GuiPrivate)
 
 set(SOURCES
     src/main.cpp
