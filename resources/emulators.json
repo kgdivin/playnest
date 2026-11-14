@@ -1,0 +1,865 @@
+{
+  "_comment": "Émulateurs pilotés par Playnest. Copie ce fichier dans le dossier de données (emulators.json) pour le modifier sans recompiler : une entrée avec le même id remplace celle-ci. Jetons des arguments : {rom}, {romdir}, {romname}, {emudir}, {system} (nom de la console pour cet émulateur, voir systemNames). Jetons des chemins : {emudir}, %APPDATA%, %LOCALAPPDATA%, %DOCUMENTS%, %HOME%. dataDirs : le premier dont 'when' (ou 'path') existe est utilisé. saves : chemins relatifs au dossier de données, '*' = n'importe quel dossier. source.type : github, gitlab ou page.",
+  "defaults": {
+    "n64": "rmg",
+    "nds": "melonds",
+    "3ds": "azahar",
+    "gc": "dolphin",
+    "wii": "dolphin",
+    "wiiu": "cemu",
+    "switch": "eden",
+    "switch2": "lichii",
+    "nes": "mesen",
+    "snes": "snes9x",
+    "gb": "mgba",
+    "gbc": "mgba",
+    "gba": "mgba"
+  },
+  "emulators": [
+    {
+      "id": "mesen",
+      "name": "Mesen",
+      "systems": [
+        "nes",
+        "snes",
+        "gb",
+        "gbc",
+        "gba"
+      ],
+      "exe": {
+        "windows": [
+          "Mesen.exe"
+        ],
+        "linux": [
+          "Mesen",
+          "mesen"
+        ]
+      },
+      "args": [
+        "--fullscreen",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "nesdev-org/MesenCE",
+        "assets": [
+          "(?i)mesen.*windows.*aot.*\\.zip$",
+          "(?i)mesen.*windows(?!.*(net6|win7)).*\\.zip$",
+          "(?i)mesen.*win.*\\.zip$"
+        ]
+      },
+      "website": "https://github.com/nesdev-org/MesenCE/releases",
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}",
+            "when": "{emudir}/settings.json"
+          },
+          {
+            "path": "%DOCUMENTS%/Mesen2"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.config/Mesen2"
+          }
+        ]
+      },
+      "saves": [
+        "Saves",
+        "SaveStates"
+      ],
+      "notes": "Le plus précis pour la NES, très bon aussi pour la Super Nintendo et les Game Boy. Aucun BIOS nécessaire."
+    },
+    {
+      "id": "snes9x",
+      "name": "Snes9x",
+      "systems": [
+        "snes"
+      ],
+      "exe": {
+        "windows": [
+          "snes9x-x64.exe",
+          "snes9x.exe"
+        ],
+        "linux": [
+          "snes9x-gtk",
+          "snes9x"
+        ]
+      },
+      "args": [
+        "-fullscreen",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "snes9xgit/snes9x",
+        "assets": [
+          "(?i)snes9x-[\\d.]+-win32-x64\\.zip$",
+          "(?i)snes9x.*x64.*\\.zip$"
+        ]
+      },
+      "website": "https://www.snes9x.com/downloads.php",
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.config/snes9x"
+          }
+        ]
+      },
+      "saves": [
+        "Saves"
+      ],
+      "notes": "Super Nintendo : léger, compatible avec presque tous les jeux, démarre en une seconde. Aucun BIOS nécessaire."
+    },
+    {
+      "id": "mgba",
+      "name": "mGBA",
+      "systems": [
+        "gba",
+        "gbc",
+        "gb"
+      ],
+      "exe": {
+        "windows": [
+          "mGBA.exe"
+        ],
+        "linux": [
+          "mgba-qt",
+          "mgba"
+        ]
+      },
+      "args": [
+        "-f",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "mgba-emu/mgba",
+        "assets": [
+          "(?i)mGBA-[\\d.]+-win64\\.7z$",
+          "(?i)mGBA-.*win64.*\\.(7z|zip)$"
+        ]
+      },
+      "website": "https://mgba.io/downloads.html",
+      "requires": [
+        "7zip"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}",
+            "when": "{emudir}/portable.ini"
+          },
+          {
+            "path": "%APPDATA%/mGBA"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.config/mgba"
+          }
+        ]
+      },
+      "notes": "Game Boy Advance, Game Boy Color et Game Boy : rapide et fidèle, idéal pour les hacks .gba. Fonctionne sans BIOS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies."
+    },
+    {
+      "id": "rmg",
+      "name": "Rosalie's Mupen GUI",
+      "systems": [
+        "n64"
+      ],
+      "exe": {
+        "windows": [
+          "RMG.exe"
+        ],
+        "linux": [
+          "RMG",
+          "rmg"
+        ]
+      },
+      "args": [
+        "-f",
+        "-q",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-q",
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "Rosalie241/RMG",
+        "assets": [
+          "(?i)^RMG-Portable-Windows64.*\\.zip$",
+          "(?i)portable.*windows.*\\.zip$"
+        ]
+      },
+      "website": "https://github.com/Rosalie241/RMG/releases",
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/Data",
+            "when": "{emudir}/portable.txt"
+          },
+          {
+            "path": "%APPDATA%/RMG"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/RMG"
+          }
+        ]
+      },
+      "saves": [
+        "Save"
+      ],
+      "notes": "Recommandé pour la N64 : moteur mupen64plus, rendu ParaLLEl-RDP ou GLideN64, manettes configurées automatiquement."
+    },
+    {
+      "id": "ares",
+      "name": "ares",
+      "systems": [
+        "n64",
+        "nes",
+        "snes",
+        "gb",
+        "gbc",
+        "gba"
+      ],
+      "exe": {
+        "windows": [
+          "ares.exe"
+        ],
+        "linux": [
+          "ares"
+        ]
+      },
+      "args": [
+        "--fullscreen",
+        "--system",
+        "{system}",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "--system",
+        "{system}",
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assets": [
+          "(?i)ares.*windows.*x64.*\\.zip$",
+          "(?i)ares.*windows.*\\.zip$"
+        ]
+      },
+      "website": "https://ares-emu.net/download",
+      "notes": "Émulateur multi-consoles très précis : Nintendo 64 (rendu ParaLLEl-RDP), NES, Super Nintendo, Game Boy et Game Boy Advance. Plus exigeant que les émulateurs spécialisés.",
+      "systemNames": {
+        "n64": "Nintendo 64",
+        "nes": "Famicom",
+        "snes": "Super Famicom",
+        "gb": "Game Boy",
+        "gbc": "Game Boy Color",
+        "gba": "Game Boy Advance"
+      }
+    },
+    {
+      "id": "melonds",
+      "name": "melonDS",
+      "systems": [
+        "nds"
+      ],
+      "exe": {
+        "windows": [
+          "melonDS.exe"
+        ],
+        "linux": [
+          "melonDS",
+          "melonds"
+        ]
+      },
+      "args": [
+        "-f",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "melonDS-emu/melonDS",
+        "assets": [
+          "(?i)windows.*x86_64.*\\.zip$",
+          "(?i)win.*64.*\\.zip$"
+        ]
+      },
+      "website": "https://melonds.kuribo64.net/downloads.php",
+      "notes": "Le meilleur émulateur DS/DSi. Fonctionne sans BIOS (FreeBIOS intégré) ; les BIOS et le firmware de ta console se configurent dans melonDS. Les sauvegardes .sav sont enregistrées à côté des jeux : Playnest les inclut dans ses copies."
+    },
+    {
+      "id": "azahar",
+      "name": "Azahar",
+      "systems": [
+        "3ds"
+      ],
+      "exe": {
+        "windows": [
+          "azahar.exe"
+        ],
+        "linux": [
+          "azahar"
+        ]
+      },
+      "args": [
+        "-f",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "versionProbe": "re:\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ\\x00+(2\\d{3}\\.\\d+(?:\\.\\d+)?)\\x00",
+      "source": {
+        "type": "github",
+        "repo": "azahar-emu/azahar",
+        "assets": [
+          "(?i)windows-msvc.*\\.zip$",
+          "(?i)windows.*\\.zip$"
+        ]
+      },
+      "website": "https://azahar-emu.org/pages/download/",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/user"
+          },
+          {
+            "path": "%APPDATA%/Azahar"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/azahar-emu"
+          }
+        ]
+      },
+      "saves": [
+        "sdmc/Nintendo 3DS/*/*/title/*/*/data",
+        "sdmc/Nintendo 3DS/*/*/extdata",
+        "nand/data"
+      ],
+      "systemFiles": [
+        {
+          "label": "Clés AES (aes_keys.txt)",
+          "path": "sysdata/aes_keys.txt",
+          "required": false,
+          "import": true,
+          "help": "Nécessaire uniquement pour les jeux chiffrés."
+        }
+      ],
+      "notes": "Successeur de Citra. Au premier lancement, Azahar propose de reprendre les données de Citra."
+    },
+    {
+      "id": "citra",
+      "name": "Citra",
+      "systems": [
+        "3ds"
+      ],
+      "exe": {
+        "windows": [
+          "citra-qt.exe"
+        ],
+        "linux": [
+          "citra-qt"
+        ]
+      },
+      "args": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-g",
+        "{rom}"
+      ],
+      "website": "https://azahar-emu.org/",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/user"
+          },
+          {
+            "path": "%APPDATA%/Citra"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/citra-emu"
+          }
+        ]
+      },
+      "saves": [
+        "sdmc/Nintendo 3DS/*/*/title/*/*/data",
+        "sdmc/Nintendo 3DS/*/*/extdata",
+        "nand/data"
+      ],
+      "systemFiles": [
+        {
+          "label": "Clés AES (aes_keys.txt)",
+          "path": "sysdata/aes_keys.txt",
+          "required": false,
+          "import": true,
+          "help": "Nécessaire uniquement pour les jeux chiffrés."
+        }
+      ],
+      "notes": "Projet arrêté en mars 2024 : plus aucune mise à jour. Azahar est son successeur direct."
+    },
+    {
+      "id": "dolphin",
+      "name": "Dolphin",
+      "systems": [
+        "gc",
+        "wii"
+      ],
+      "exe": {
+        "windows": [
+          "Dolphin.exe"
+        ],
+        "linux": [
+          "dolphin-emu"
+        ]
+      },
+      "args": [
+        "-b",
+        "-C",
+        "Dolphin.Display.Fullscreen=True",
+        "-e",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-b",
+        "-e",
+        "{rom}"
+      ],
+      "source": {
+        "type": "page",
+        "url": "https://dolphin-emu.org/download/",
+        "assets": [
+          "https://dl\\.dolphin-emu\\.org/releases/[^\"'<> ]+-x64\\.7z",
+          "https://dl\\.dolphin-emu\\.org/builds/[^\"'<> ]+-x64\\.7z"
+        ],
+        "version": "dolphin-(?:master-)?([0-9][0-9a-z.\\-]*)-x64"
+      },
+      "website": "https://dolphin-emu.org/download/",
+      "requires": [
+        "vcredist",
+        "7zip"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/User",
+            "when": "{emudir}/portable.txt"
+          },
+          {
+            "path": "%DOCUMENTS%/Dolphin Emulator"
+          },
+          {
+            "path": "%APPDATA%/Dolphin Emulator"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/dolphin-emu"
+          }
+        ]
+      },
+      "saves": [
+        "GC",
+        "Wii/title/*/*/data"
+      ],
+      "notes": "GameCube et Wii. Distribué en .7z : Playnest installe 7-Zip automatiquement si besoin."
+    },
+    {
+      "id": "cemu",
+      "name": "Cemu",
+      "systems": [
+        "wiiu"
+      ],
+      "exe": {
+        "windows": [
+          "Cemu.exe"
+        ],
+        "linux": [
+          "Cemu",
+          "cemu"
+        ]
+      },
+      "args": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-g",
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "cemu-project/Cemu",
+        "assets": [
+          "(?i)windows-x64\\.zip$",
+          "(?i)windows.*\\.zip$"
+        ]
+      },
+      "website": "https://cemu.info/",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/portable"
+          },
+          {
+            "path": "%APPDATA%/Cemu"
+          },
+          {
+            "path": "{emudir}"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/Cemu"
+          }
+        ]
+      },
+      "saves": [
+        "mlc01/usr/save"
+      ],
+      "systemFiles": [
+        {
+          "label": "Clés de disques (keys.txt)",
+          "path": "keys.txt",
+          "required": false,
+          "import": true,
+          "help": "Nécessaire uniquement pour les images WUD/WUX chiffrées."
+        }
+      ],
+      "notes": "Émulateur Wii U. Les packs graphiques (60 FPS, résolution) se gèrent depuis Cemu."
+    },
+    {
+      "id": "eden",
+      "name": "Eden",
+      "unsupported": [
+        "nup"
+      ],
+      "systems": [
+        "switch"
+      ],
+      "exe": {
+        "windows": [
+          "eden.exe"
+        ],
+        "linux": [
+          "eden"
+        ]
+      },
+      "args": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-g",
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "eden-emulator/Releases",
+        "assets": [
+          "(?i)^eden-windows-.*amd64.*msvc.*\\.zip$",
+          "(?i)^eden-windows-.*amd64.*\\.zip$"
+        ]
+      },
+      "website": "https://eden-emu.dev/",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/user"
+          },
+          {
+            "path": "%APPDATA%/eden"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/eden"
+          }
+        ]
+      },
+      "saves": [
+        "nand/user/save"
+      ],
+      "systemFiles": [
+        {
+          "label": "prod.keys",
+          "path": "keys/prod.keys",
+          "required": true,
+          "import": true
+        },
+        {
+          "label": "title.keys",
+          "path": "keys/title.keys",
+          "required": false,
+          "import": true
+        },
+        {
+          "label": "Firmware",
+          "path": "nand/system/Contents/registered",
+          "kind": "dir",
+          "required": true,
+          "help": "Installe-le depuis l'émulateur : menu Outils > Installer le firmware."
+        }
+      ],
+      "notes": "Successeur de yuzu, activement développé. Lichii partage le même dossier de données : clés, firmware et sauvegardes communs."
+    },
+    {
+      "id": "citron",
+      "name": "Citron",
+      "unsupported": [
+        "nup"
+      ],
+      "systems": [
+        "switch"
+      ],
+      "exe": {
+        "windows": [
+          "citron.exe"
+        ],
+        "linux": [
+          "citron"
+        ]
+      },
+      "args": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-g",
+        "{rom}"
+      ],
+      "website": "https://citron-emu.org/",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/user"
+          },
+          {
+            "path": "%APPDATA%/citron"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/citron"
+          }
+        ]
+      },
+      "saves": [
+        "nand/user/save"
+      ],
+      "systemFiles": [
+        {
+          "label": "prod.keys",
+          "path": "keys/prod.keys",
+          "required": true,
+          "import": true
+        },
+        {
+          "label": "Firmware",
+          "path": "nand/system/Contents/registered",
+          "kind": "dir",
+          "required": true,
+          "help": "Installe-le depuis l'émulateur."
+        }
+      ],
+      "notes": "Autre fork de yuzu. Mêmes prérequis qu'Eden."
+    },
+    {
+      "id": "ryujinx",
+      "name": "Ryujinx (Ryubing)",
+      "unsupported": [
+        "nup"
+      ],
+      "systems": [
+        "switch"
+      ],
+      "exe": {
+        "windows": [
+          "Ryujinx.exe"
+        ],
+        "linux": [
+          "Ryujinx",
+          "ryujinx"
+        ]
+      },
+      "args": [
+        "--fullscreen",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "{rom}"
+      ],
+      "source": {
+        "type": "gitlab",
+        "host": "git.ryujinx.app",
+        "repo": "ryubing/ryujinx",
+        "assets": [
+          "(?i)win_x64\\.zip$"
+        ]
+      },
+      "website": "https://ryujinx.app/",
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/portable"
+          },
+          {
+            "path": "%APPDATA%/Ryujinx"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%HOME%/.config/Ryujinx"
+          }
+        ]
+      },
+      "saves": [
+        "bis/user/save"
+      ],
+      "systemFiles": [
+        {
+          "label": "prod.keys",
+          "path": "system/prod.keys",
+          "required": true,
+          "import": true
+        },
+        {
+          "label": "Firmware",
+          "path": "bis/system/Contents/registered",
+          "kind": "dir",
+          "required": true,
+          "help": "Installe-le depuis l'émulateur : Outils > Installer le firmware."
+        }
+      ],
+      "notes": "Continuation communautaire de Ryujinx. Très bonne compatibilité."
+    },
+    {
+      "id": "lichii",
+      "name": "Lichii",
+      "systems": [
+        "switch2",
+        "switch"
+      ],
+      "exe": {
+        "windows": [
+          "lichii.exe"
+        ],
+        "linux": [
+          "lichii"
+        ]
+      },
+      "args": [
+        "-f",
+        "-g",
+        "{rom}"
+      ],
+      "argsWindowed": [
+        "-g",
+        "{rom}"
+      ],
+      "source": {
+        "type": "github",
+        "repo": "zortos293/Lichii",
+        "assets": [
+          "^lichii-windows-x86_64-pgo\\.zip$",
+          "^lichii-windows-x86_64\\.zip$"
+        ]
+      },
+      "website": "https://github.com/zortos293/Lichii",
+      "requires": [
+        "vcredist"
+      ],
+      "dataDirs": {
+        "windows": [
+          {
+            "path": "{emudir}/user"
+          },
+          {
+            "path": "%APPDATA%/lichii"
+          },
+          {
+            "path": "%APPDATA%/eden"
+          }
+        ],
+        "linux": [
+          {
+            "path": "%APPDATA%/lichii"
+          },
+          {
+            "path": "%APPDATA%/eden"
+          }
+        ]
+      },
+      "versionProbe": "Lichii build-",
+      "saves": [
+        "nand/user/save"
+      ],
+      "systemFiles": [
+        {
+          "label": "prod.keys",
+          "path": "keys/prod.keys",
+          "required": true,
+          "import": true
+        },
+        {
+          "label": "Firmware",
+          "path": "nand/system/Contents/registered",
+          "kind": "dir",
+          "required": true,
+          "help": "Installe-le depuis l'émulateur : menu Outils > Installer le firmware."
+        }
+      ],
+      "notes": "Seul émulateur Switch 2 actuel (fork d'Eden). Très expérimental. Les builds récentes ont leur propre dossier de données (%APPDATA%\\lichii) ; les plus anciennes partagent celui d'Eden."
+    }
+  ]
+}

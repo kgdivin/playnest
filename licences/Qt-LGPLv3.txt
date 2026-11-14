@@ -1,0 +1,3 @@
+Cartouche utilise Qt 6 (https://www.qt.io) sous licence LGPLv3, lie statiquement.
+Le code source complet (Cartouche-source.zip) est fourni afin de permettre de relier Cartouche a une autre version de Qt.
+Texte de la licence : https://www.gnu.org/licenses/lgpl-3.0.html

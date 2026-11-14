@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Compile Playnest et lance les tests de détection sur des fichiers d'exemple.
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dépendances
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-private-dev libsdl2-dev ninja-build
+      - name: Compiler et tester
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DPLAYNEST_BUILD_TESTS=ON
+          cmake --build build
+          python3 tests/make_samples.py /tmp/samples
+          QT_QPA_PLATFORM=offscreen ./build/playnest_detect_test /tmp/samples
+
+  # Zip Windows, à la demande (onglet Actions > Build > Run workflow).
+  windows:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Environnement MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Compiler
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - name: Empaqueter
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/Playnest | Out-Null
+          Copy-Item build/Playnest.exe dist/Playnest/
+          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw dist/Playnest/Playnest.exe
+          Copy-Item README.md dist/Playnest/LISEZ-MOI.md
+          Copy-Item README.en.md dist/Playnest/README.md
+          Compress-Archive -Path dist/Playnest -DestinationPath Playnest-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Playnest-windows-x64
+          path: Playnest-windows-x64.zip
