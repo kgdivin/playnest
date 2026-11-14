@@ -1,0 +1,206 @@
+{
+  "_comment": "Définition des systèmes. Pour modifier ou ajouter un système sans recompiler, copie ce fichier dans le dossier de données de Playnest (systems.json) : les entrées avec le même id remplacent celles-ci.",
+  "systems": [
+    {
+      "id": "nes",
+      "name": "NES",
+      "short": "NES",
+      "year": 1983,
+      "color": "#E0563F",
+      "extensions": [
+        "nes",
+        "fds",
+        "unf",
+        "unif"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire pour les jeux en cartouche (.nes). Les jeux Famicom Disk System (.fds) demandent le fichier disksys.rom de ta propre console."
+    },
+    {
+      "id": "gb",
+      "name": "Game Boy",
+      "short": "GB",
+      "year": 1989,
+      "color": "#9BBC0F",
+      "extensions": [
+        "gb",
+        "sgb"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Les sauvegardes .sav sont enregistrées à côté des jeux."
+    },
+    {
+      "id": "snes",
+      "name": "Super Nintendo",
+      "short": "SNES",
+      "year": 1990,
+      "color": "#A99CF0",
+      "extensions": [
+        "sfc",
+        "smc",
+        "swc",
+        "fig"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Le format .sfc est recommandé ; .smc est aussi accepté."
+    },
+    {
+      "id": "n64",
+      "name": "Nintendo 64",
+      "short": "N64",
+      "year": 1996,
+      "color": "#3D7BFD",
+      "extensions": [
+        "z64",
+        "n64",
+        "v64",
+        "ndd"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Les ROM .z64 (big-endian) sont le format recommandé ; .v64 et .n64 sont aussi acceptés."
+    },
+    {
+      "id": "gbc",
+      "name": "Game Boy Color",
+      "short": "GBC",
+      "year": 1998,
+      "color": "#E879F9",
+      "extensions": [
+        "gbc",
+        "cgb"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Les sauvegardes .sav sont enregistrées à côté des jeux."
+    },
+    {
+      "id": "gc",
+      "name": "GameCube",
+      "short": "GC",
+      "year": 2001,
+      "color": "#8E4EC6",
+      "extensions": [
+        "iso",
+        "gcm",
+        "rvz",
+        "gcz",
+        "ciso",
+        "wia",
+        "tgc"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Le format RVZ (compressé, sans perte) est recommandé : Dolphin convertit les ISO via clic droit > Convertir."
+    },
+    {
+      "id": "gba",
+      "name": "Game Boy Advance",
+      "short": "GBA",
+      "year": 2001,
+      "color": "#7A6CFF",
+      "extensions": [
+        "gba",
+        "agb"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire : mGBA intègre un BIOS de remplacement. Les hacks au format .gba se lancent comme les jeux d'origine ; les sauvegardes .sav sont enregistrées à côté des jeux."
+    },
+    {
+      "id": "nds",
+      "name": "Nintendo DS",
+      "short": "DS",
+      "year": 2004,
+      "color": "#A3ADBD",
+      "extensions": [
+        "nds",
+        "dsi",
+        "srl"
+      ],
+      "requirements": "melonDS fonctionne sans BIOS grâce à son FreeBIOS intégré. Pour le Wi-Fi, le mode DSi et une compatibilité maximale, configure dans melonDS les fichiers bios7.bin, bios9.bin et firmware.bin extraits de ta propre console."
+    },
+    {
+      "id": "wii",
+      "name": "Wii",
+      "short": "Wii",
+      "year": 2006,
+      "color": "#3CCFE0",
+      "extensions": [
+        "iso",
+        "wbfs",
+        "rvz",
+        "gcz",
+        "ciso",
+        "wia",
+        "wad",
+        "dol"
+      ],
+      "requirements": "Aucun BIOS n'est nécessaire. Pour la Wiimote, configure dans Dolphin une manette émulée ou une vraie Wiimote via Bluetooth."
+    },
+    {
+      "id": "3ds",
+      "name": "Nintendo 3DS",
+      "short": "3DS",
+      "year": 2011,
+      "color": "#2BB673",
+      "extensions": [
+        "3ds",
+        "cci",
+        "cxi",
+        "cia",
+        "3dsx",
+        "z3ds",
+        "zcci",
+        "zcxi",
+        "zcia",
+        "z3dsx"
+      ],
+      "requirements": "Les jeux décryptés se lancent directement. Pour les jeux chiffrés, Azahar a besoin des clés (aes_keys.txt) extraites de ta propre console, à placer dans son dossier sysdata."
+    },
+    {
+      "id": "wiiu",
+      "name": "Wii U",
+      "short": "Wii U",
+      "year": 2012,
+      "color": "#6366F1",
+      "extensions": [
+        "wua",
+        "wud",
+        "wux",
+        "rpx",
+        "wuhb"
+      ],
+      "requirements": "Format recommandé : WUA (archive Cemu) ou dossier décrypté (code/content/meta). Les images WUD/WUX chiffrées demandent un fichier keys.txt contenant les clés de tes propres disques, dans le dossier de Cemu."
+    },
+    {
+      "id": "switch",
+      "name": "Nintendo Switch",
+      "short": "Switch",
+      "year": 2017,
+      "color": "#FF4554",
+      "extensions": [
+        "nsp",
+        "xci",
+        "nsz",
+        "xcz",
+        "nro",
+        "nup"
+      ],
+      "requirements": "L'émulateur a besoin de prod.keys, title.keys et du firmware extraits de ta propre console Switch (outil Lockpick_RCM sur une console modifiée). Installe-les dans l'émulateur (menu Outils / Install keys et Install firmware)."
+    },
+    {
+      "id": "switch2",
+      "name": "Nintendo Switch 2",
+      "short": "Switch 2",
+      "year": 2025,
+      "color": "#F97316",
+      "extensions": [
+        "nsp",
+        "xci",
+        "nsz",
+        "xcz",
+        "nup"
+      ],
+      "requirements": "Émulation TRÈS expérimentale (Lichii). Format conseillé : .nup, le paquet de Lichii qui réunit le jeu, ses mises à jour et ses DLC. Nécessite les clés et le firmware de ta propre Switch 2, un GPU récent compatible Vulkan et beaucoup de RAM. Peu de jeux démarrent, les performances varient fortement."
+    },
+    {
+      "id": "pc",
+      "name": "Jeux PC et fan games",
+      "short": "PC",
+      "year": 0,
+      "color": "#FB7185",
+      "extensions": [],
+      "requirements": "Jeux qui se lancent directement sous Windows, sans émulateur : fan games RPG Maker, Pokémon Essentials, Pokémon SDK, etc."
+    }
+  ]
+}

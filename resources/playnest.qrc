@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/data">
+        <file alias="systems.json">systems.json</file>
+        <file alias="emulators.json">emulators.json</file>
+        <file alias="switch2_titles.json">switch2_titles.json</file>
+    </qresource>
+    <qresource prefix="/lang">
+        <file alias="en.json">lang/en.json</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="Barlow_400Regular.ttf">fonts/Barlow_400Regular.ttf</file>
+        <file alias="Barlow_500Medium.ttf">fonts/Barlow_500Medium.ttf</file>
+        <file alias="Barlow_600SemiBold.ttf">fonts/Barlow_600SemiBold.ttf</file>
+        <file alias="BarlowSemiCondensed_600SemiBold.ttf">fonts/BarlowSemiCondensed_600SemiBold.ttf</file>
+        <file alias="BarlowSemiCondensed_700Bold.ttf">fonts/BarlowSemiCondensed_700Bold.ttf</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file alias="chevron.png">icons/chevron.png</file>
+        <file alias="check.png">icons/check.png</file>
+    </qresource>
+</RCC>
