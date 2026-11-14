@@ -70,7 +70,7 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_COPYRIGHT "Playnest")
 endif()
-target_link_libraries(Playnest PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Widgets Qt6::Network Qt6::Concurrent)
+target_link_libraries(Playnest PRIVATE Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::GuiPrivate Qt6::Widgets Qt6::Network Qt6::Concurrent)
 if(WIN32)
     target_link_libraries(Playnest PRIVATE version)
 endif()
@@ -112,7 +112,7 @@ if(PLAYNEST_BUILD_TESTS)
         src/core/Library.cpp src/core/CoverManager.cpp src/core/Net.cpp src/core/Launcher.cpp
         src/core/Emulators.cpp src/core/Archive.cpp src/core/Tools.cpp src/core/Saves.cpp src/core/Organizer.cpp
         resources/playnest.qrc)
-    target_link_libraries(playnest_detect_test PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Network Qt6::Concurrent)
+    target_link_libraries(playnest_detect_test PRIVATE Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::GuiPrivate Qt6::Network Qt6::Concurrent)
     if(WIN32)
         target_link_libraries(playnest_detect_test PRIVATE version)
     endif()

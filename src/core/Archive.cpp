@@ -14,8 +14,14 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QStandardPaths>
+// QZipReader et QZipWriter : dans QtGui jusqu'à Qt 6.6, dans QtCore ensuite.
+#if __has_include(<QtCore/private/qzipreader_p.h>)
+#include <QtCore/private/qzipreader_p.h>
+#include <QtCore/private/qzipwriter_p.h>
+#else
 #include <QtGui/private/qzipreader_p.h>
 #include <QtGui/private/qzipwriter_p.h>
+#endif
 
 namespace Archive {
 
